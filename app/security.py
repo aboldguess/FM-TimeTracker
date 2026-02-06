@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 
 from itsdangerous import BadSignature, URLSafeSerializer
 from passlib.context import CryptContext
+from passlib.exc import MissingBackendError
 
 from app.config import settings
 
@@ -23,6 +24,17 @@ serializer = URLSafeSerializer(settings.secret_key, salt="fm-timetracker-session
 def hash_password(password: str) -> str:
     """Hash a plaintext password using Argon2."""
     return pwd_context.hash(password)
+
+
+def ensure_password_backend() -> None:
+    """Validate Argon2 backend availability with a lightweight hash."""
+    try:
+        # This keeps the check fast while still proving the backend is usable.
+        pwd_context.hash("argon2-backend-check")
+    except MissingBackendError as exc:
+        raise RuntimeError(
+            "Argon2 backend unavailable. Install argon2-cffi in the active virtual environment."
+        ) from exc
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
