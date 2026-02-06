@@ -125,6 +125,12 @@ STRIPE_PUBLISHABLE_KEY=
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+#### Windows (PowerShell) preferred entry point
+```powershell
+$env:PORT=8000
+.\scripts\dev.ps1
+```
+
 Open: `http://localhost:8000`
 
 ### Bootstrap credentials
