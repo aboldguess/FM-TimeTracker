@@ -42,7 +42,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - `tests/test_health.py` – health endpoint smoke test
 
 ## Security Notes
-- Passwords are hashed with bcrypt (`passlib`).
+- Passwords are hashed with Argon2 (`passlib` + `argon2-cffi`).
 - Session cookies are HTTP-only and signed.
 - Role checks are enforced server-side for CRUD boundaries.
 - Set a strong `SECRET_KEY` and `SECURE_COOKIES=true` in production.
@@ -76,24 +76,44 @@ pip install -r requirements.txt
 ```
 
 ### 4) Configure environment variables
-Create a `.env` file in the repo root (same folder as `README.md`). You can use these commands:
+Create a `.env` file in the repo root (same folder as `README.md`) by copying the example file.
+This keeps sensitive values out of source control and makes setup repeatable across OSes.
 
 #### Linux/macOS/Raspberry Pi
 ```bash
-cp .env.example .env 2>/dev/null || touch .env
+cp .env.example .env
 ```
 
 #### Windows (PowerShell)
 ```powershell
-if (!(Test-Path .env)) { New-Item -ItemType File .env | Out-Null }
+Copy-Item .env.example .env
 ```
 
-Then add the following values:
+Then edit `.env` and add your values. **Always set a strong secret key.** You can generate one:
+
+#### Linux/macOS/Raspberry Pi
+```bash
+python3 - <<'PY'
+import secrets
+print(secrets.token_urlsafe(48))
+PY
+```
+
+#### Windows (PowerShell)
+```powershell
+python - <<'PY'
+import secrets
+print(secrets.token_urlsafe(48))
+PY
+```
+
+Example values:
 ```env
 SECRET_KEY=replace-with-very-strong-secret
 DATABASE_URL=sqlite:///./fm_timetracker.db
 ENVIRONMENT=development
 DEBUG=true
+HOST=0.0.0.0
 PORT=8000
 SECURE_COOKIES=false
 STRIPE_SECRET_KEY=

@@ -5,3 +5,5 @@ __pycache__/
 fm_timetracker.db
 .pytest_cache/
 .env
+.env.*
+!.env.example
