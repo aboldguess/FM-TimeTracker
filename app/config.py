@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     secure_cookies: bool = False
+    bootstrap_admin_email: str = "admin@change.me"
+    bootstrap_admin_password: str = "ChangeMeNow!123"
     stripe_secret_key: str | None = None
     stripe_publishable_key: str | None = None
 
