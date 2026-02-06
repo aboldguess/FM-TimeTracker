@@ -1,0 +1,45 @@
+<!--
+Mini-README: Shared HTML shell with modern styling hooks and role-aware navbar.
+Used by all pages to keep UX consistent and discoverable.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title or 'FM TimeTracker' }}</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-left"><a href="/" class="brand">FM TimeTracker</a></div>
+    <div class="nav-right">
+      {% if user and user.role == 'admin' %}
+      <details class="menu">
+        <summary>Admin</summary>
+        <div class="menu-items">
+          <span>Manage Users</span>
+          <span>Manage Site</span>
+        </div>
+      </details>
+      {% endif %}
+      {% if user %}
+      <details class="menu">
+        <summary>👤 {{ user.full_name }}</summary>
+        <div class="menu-items">
+          <span>Learning Zone (FAQ & help)</span>
+          <span>My Details</span>
+          <span>Manage Subscription</span>
+          <a href="/logout">Log out</a>
+        </div>
+      </details>
+      {% else %}
+      <a href="/login" class="btn">Sign In</a>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,14 @@
+<!-- Mini-README: Login page with clear usage instructions and error handling. -->
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel">
+  <h1>Secure Sign In</h1>
+  <p>Use your assigned work account. For new environments use the bootstrap admin credentials shown on the landing page, then rotate the password.</p>
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="/login" class="form">
+    <label>Email<input type="email" name="email" required></label>
+    <label>Password<input type="password" name="password" required></label>
+    <button type="submit" class="btn">Log In</button>
+  </form>
+</section>
+{% endblock %}
