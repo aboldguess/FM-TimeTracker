@@ -11,15 +11,22 @@ from passlib.context import CryptContext
 
 from app.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Argon2 is memory-hard and resilient against GPU/ASIC cracking.
+pwd_context = CryptContext(
+    schemes=["argon2"],
+    deprecated="auto",
+)
+# Signed serializer protects session payload integrity.
 serializer = URLSafeSerializer(settings.secret_key, salt="fm-timetracker-session")
 
 
 def hash_password(password: str) -> str:
+    """Hash a plaintext password using Argon2."""
     return pwd_context.hash(password)
 
 
 def verify_password(password: str, hashed_password: str) -> bool:
+    """Verify a plaintext password against a stored hash."""
     return pwd_context.verify(password, hashed_password)
 
 
