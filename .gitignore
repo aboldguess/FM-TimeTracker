@@ -1,0 +1,7 @@
+# Mini-README: Standard Python ignores for local and CI cleanliness.
+.venv/
+__pycache__/
+*.pyc
+fm_timetracker.db
+.pytest_cache/
+.env

@@ -1,0 +1,15 @@
+<!-- Mini-README: Friendly landing splash page introducing capabilities and CTAs. -->
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  <h1>Enterprise Project & Programme Command Centre</h1>
+  <p>Secure role-based planning, delivery tracking, timesheets, leave, and live financial intelligence in one browser app.</p>
+  <div class="card-grid">
+    <article class="card"><h3>Role-aware control</h3><p>Admins, programme managers, project managers, and staff get tailored permissions and dashboards.</p></article>
+    <article class="card"><h3>Plan vs Actual</h3><p>Track work packages, tasks, resource budgets, and progress against targets.</p></article>
+    <article class="card"><h3>People Ops built-in</h3><p>Timesheets, annual leave approvals, and sick leave recording are first-class features.</p></article>
+  </div>
+  <p class="instruction">New installation? Sign in with <strong>admin@local / ChangeMeNow!123</strong> and update credentials immediately.</p>
+  <a href="/login" class="btn">Enter platform</a>
+</section>
+{% endblock %}

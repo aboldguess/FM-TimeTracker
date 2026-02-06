@@ -1,0 +1,26 @@
+"""Configuration module.
+
+This file centralizes runtime configuration for local development and production
+deployments (for example on Render). Values can be provided via environment
+variables or a local `.env` file.
+"""
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    app_name: str = "FM TimeTracker"
+    environment: str = "development"
+    debug: bool = True
+    secret_key: str = "change-me-in-production"
+    database_url: str = "sqlite:///./fm_timetracker.db"
+    host: str = "0.0.0.0"
+    port: int = 8000
+    secure_cookies: bool = False
+    stripe_secret_key: str | None = None
+    stripe_publishable_key: str | None = None
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+
+settings = Settings()

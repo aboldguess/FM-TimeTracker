@@ -1,0 +1,27 @@
+/*
+Mini-README: Global modern visual style for splash/login/dashboard pages.
+Designed for readability and a professional enterprise aesthetic.
+*/
+:root {
+  --bg: #0f172a;
+  --panel: #111827;
+  --text: #e5e7eb;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+}
+body { font-family: Inter, system-ui, sans-serif; margin: 0; color: var(--text); background: radial-gradient(circle at top right, #1e293b, var(--bg)); }
+.navbar { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background: rgba(17,24,39,.9); border-bottom:1px solid #334155; position: sticky; top:0; }
+.brand { color: var(--text); text-decoration:none; font-weight:700; }
+.container { max-width: 1050px; margin: 2rem auto; padding: 0 1rem; }
+.hero h1 { font-size: 2.4rem; margin-bottom: .5rem; }
+.card-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap: 1rem; margin: 1rem 0; }
+.card, .panel { background: rgba(17,24,39,.92); border:1px solid #334155; border-radius: 16px; padding: 1rem; }
+.btn { display:inline-block; background: var(--accent); color:#022c43; text-decoration:none; font-weight:700; border:none; border-radius:999px; padding:.65rem 1rem; cursor:pointer; }
+.form { display:grid; gap: .75rem; }
+input { width:100%; box-sizing:border-box; padding:.6rem; border-radius:10px; border:1px solid #475569; background:#0b1220; color:var(--text); }
+.error { color: #fca5a5; }
+.instruction { color: var(--muted); }
+.menu { display:inline-block; margin-left:.5rem; }
+.menu summary { cursor:pointer; list-style:none; background:#1e293b; padding:.45rem .7rem; border-radius:10px; }
+.menu-items { position:absolute; background:#0b1220; border:1px solid #334155; border-radius:10px; padding:.5rem; display:grid; gap:.3rem; min-width: 220px; }
+.menu-items a, .menu-items span { color:var(--text); text-decoration:none; font-size:.9rem; }

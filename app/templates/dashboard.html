@@ -1,0 +1,22 @@
+<!-- Mini-README: Role-sensitive dashboard surfacing key operational metrics. -->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>{{ user.role.replace('_', ' ').title() }} Dashboard</h1>
+  <p class="instruction">Use API endpoints to CRUD records. This dashboard summarizes your current operational picture.</p>
+  <div class="card-grid">
+    <article class="card"><h3>Total projects</h3><p>{{ project_count }}</p></article>
+    <article class="card"><h3>Your logged hours</h3><p>{{ '%.2f'|format(timesheet_hours or 0) }}</p></article>
+    <article class="card"><h3>Pending leave approvals</h3><p>{{ pending_leave }}</p></article>
+  </div>
+  <div class="panel">
+    <h2>Quick start actions</h2>
+    <ul>
+      <li>Admins: configure user cost/bill rates, leave entitlement, site config, and subscription tiers.</li>
+      <li>Programme Managers: create projects and assign managers, staff, work packages, tasks, and requirements.</li>
+      <li>Project Managers: manage projects, staff allocations, and task progress updates.</li>
+      <li>All users: submit timesheets, annual leave requests, and sick leave records.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}
