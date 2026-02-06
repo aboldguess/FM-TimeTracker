@@ -43,6 +43,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 def bootstrap_context(db: Session) -> dict[str, object]:
     """Build context for rendering bootstrap admin guidance."""
+    admin_count = db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN)) or 0
     bootstrap_exists = (
         db.scalar(
             select(func.count(User.id)).where(
@@ -53,7 +54,7 @@ def bootstrap_context(db: Session) -> dict[str, object]:
         or 0
     )
     return {
-        "show_bootstrap": bootstrap_exists > 0,
+        "show_bootstrap": admin_count == 0 or bootstrap_exists > 0,
         "bootstrap_email": settings.bootstrap_admin_email,
         "bootstrap_password": settings.bootstrap_admin_password,
     }
