@@ -48,13 +48,15 @@ def bootstrap_context(db: Session) -> dict[str, object]:
         db.scalar(
             select(func.count(User.id)).where(
                 User.role == Role.ADMIN,
-                User.email == settings.bootstrap_admin_email,
+                func.lower(User.email) == settings.bootstrap_admin_email.lower(),
             )
         )
         or 0
     )
+    # Only hide bootstrap guidance once a non-bootstrap admin is created.
+    non_bootstrap_admins = max(admin_count - bootstrap_exists, 0)
     return {
-        "show_bootstrap": admin_count == 0 or bootstrap_exists > 0,
+        "show_bootstrap": admin_count == 0 or non_bootstrap_admins == 0,
         "bootstrap_email": settings.bootstrap_admin_email,
         "bootstrap_password": settings.bootstrap_admin_password,
     }
