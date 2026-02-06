@@ -9,7 +9,11 @@
     <article class="card"><h3>Plan vs Actual</h3><p>Track work packages, tasks, resource budgets, and progress against targets.</p></article>
     <article class="card"><h3>People Ops built-in</h3><p>Timesheets, annual leave approvals, and sick leave recording are first-class features.</p></article>
   </div>
-  <p class="instruction">New installation? Sign in with <strong>admin@change.me / ChangeMeNow!123</strong>, then update your email, password, and profile details (including an optional profile image) immediately.</p>
+  {% if show_bootstrap %}
+  <p class="instruction">New installation? Sign in with <strong>{{ bootstrap_email }} / {{ bootstrap_password }}</strong>, then update your email, password, and profile details (including an optional profile image) immediately.</p>
+  {% else %}
+  <p class="instruction">An administrator account already exists. Use your assigned admin credentials or contact support to regain access.</p>
+  {% endif %}
   <a href="/login" class="btn">Enter platform</a>
 </section>
 {% endblock %}

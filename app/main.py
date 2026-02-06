@@ -41,6 +41,24 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 
 
+def bootstrap_context(db: Session) -> dict[str, object]:
+    """Build context for rendering bootstrap admin guidance."""
+    bootstrap_exists = (
+        db.scalar(
+            select(func.count(User.id)).where(
+                User.role == Role.ADMIN,
+                User.email == settings.bootstrap_admin_email,
+            )
+        )
+        or 0
+    )
+    return {
+        "show_bootstrap": bootstrap_exists > 0,
+        "bootstrap_email": settings.bootstrap_admin_email,
+        "bootstrap_password": settings.bootstrap_admin_password,
+    }
+
+
 @app.on_event("startup")
 def startup() -> None:
     Base.metadata.create_all(bind=engine)
@@ -51,9 +69,9 @@ def startup() -> None:
         if not admin_exists:
             db.add(
                 User(
-                    email="admin@change.me",
+                    email=settings.bootstrap_admin_email,
                     full_name="System Admin",
-                    hashed_password=hash_password("ChangeMeNow!123"),
+                    hashed_password=hash_password(settings.bootstrap_admin_password),
                     role=Role.ADMIN,
                     cost_rate=120,
                     bill_rate=250,
@@ -64,12 +82,29 @@ def startup() -> None:
 
 @app.get("/", response_class=HTMLResponse)
 def landing(request: Request):
-    return templates.TemplateResponse("landing.html", {"request": request})
+    with Session(engine) as db:
+        bootstrap_details = bootstrap_context(db)
+    return templates.TemplateResponse(
+        "landing.html",
+        {
+            "request": request,
+            **bootstrap_details,
+        },
+    )
 
 
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    with Session(engine) as db:
+        bootstrap_details = bootstrap_context(db)
+    return templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "error": None,
+            **bootstrap_details,
+        },
+    )
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -81,13 +116,22 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
             "login.html",
             {
                 "request": request,
-                "error": "Enter a valid email address (example: admin@change.me).",
+                "error": f"Enter a valid email address (example: {settings.bootstrap_admin_email}).",
+                **bootstrap_context(db),
             },
             status_code=400,
         )
     user = db.scalar(select(User).where(User.email == payload.email))
     if not user or not verify_password(payload.password, user.hashed_password):
-        return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"}, status_code=401)
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": "Invalid credentials",
+                **bootstrap_context(db),
+            },
+            status_code=401,
+        )
     response = RedirectResponse("/dashboard", status_code=302)
     response.set_cookie("session_token", create_session_token(user.id), httponly=True, secure=settings.secure_cookies, samesite="lax")
     return response
