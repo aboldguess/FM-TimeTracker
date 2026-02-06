@@ -33,7 +33,7 @@ from app.models import (
     WorkPackage,
 )
 from app.schemas import LeaveCreate, LoginRequest, ProjectCreate, SickLeaveCreate, TimesheetCreate, UserCreate, UserUpdate
-from app.security import create_session_token, hash_password, verify_password
+from app.security import create_session_token, ensure_password_backend, hash_password, verify_password
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -44,6 +44,7 @@ templates = Jinja2Templates(directory="app/templates")
 def startup() -> None:
     Base.metadata.create_all(bind=engine)
     stripe.api_key = settings.stripe_secret_key
+    ensure_password_backend()
     with Session(engine) as db:
         admin_exists = db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN))
         if not admin_exists:
