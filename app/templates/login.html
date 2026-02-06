@@ -3,7 +3,7 @@
 {% block content %}
 <section class="panel">
   <h1>Secure Sign In</h1>
-  <p>Use your assigned work account. For new environments use the bootstrap admin credentials shown on the landing page, then rotate the password.</p>
+  <p>Use your assigned work account. For new environments use the bootstrap admin credentials shown on the landing page, then update your email, password, and profile details immediately.</p>
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <form method="post" action="/login" class="form">
     <label>Email<input type="email" name="email" required></label>

@@ -134,7 +134,7 @@ $env:PORT=8000
 Open: `http://localhost:8000`
 
 ### Bootstrap credentials
-- Email: `admin@local`
+- Email: `admin@change.me`
 - Password: `ChangeMeNow!123`
 
 Change password immediately by updating the user via API.

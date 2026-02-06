@@ -11,6 +11,7 @@ from fastapi import Depends, FastAPI, Form, HTTPException, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -50,7 +51,7 @@ def startup() -> None:
         if not admin_exists:
             db.add(
                 User(
-                    email="admin@local",
+                    email="admin@change.me",
                     full_name="System Admin",
                     hashed_password=hash_password("ChangeMeNow!123"),
                     role=Role.ADMIN,
@@ -73,7 +74,17 @@ def login_page(request: Request):
 
 @app.post("/login", response_class=HTMLResponse)
 def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
-    payload = LoginRequest(email=email, password=password)
+    try:
+        payload = LoginRequest(email=email, password=password)
+    except ValidationError:
+        return templates.TemplateResponse(
+            "login.html",
+            {
+                "request": request,
+                "error": "Enter a valid email address (example: admin@change.me).",
+            },
+            status_code=400,
+        )
     user = db.scalar(select(User).where(User.email == payload.email))
     if not user or not verify_password(payload.password, user.hashed_password):
         return templates.TemplateResponse("login.html", {"request": request, "error": "Invalid credentials"}, status_code=401)
