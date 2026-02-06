@@ -45,7 +45,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     timesheets: Mapped[list[TimesheetEntry]] = relationship(back_populates="user", cascade="all, delete-orphan")
-    leave_requests: Mapped[list[LeaveRequest]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    leave_requests: Mapped[list[LeaveRequest]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="LeaveRequest.user_id",
+    )
+    reviewed_leave_requests: Mapped[list[LeaveRequest]] = relationship(
+        back_populates="reviewer",
+        foreign_keys="LeaveRequest.reviewer_id",
+    )
     sick_leaves: Mapped[list[SickLeaveRecord]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
@@ -146,6 +154,10 @@ class LeaveRequest(Base):
     reviewer_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
 
     user: Mapped[User] = relationship(back_populates="leave_requests", foreign_keys=[user_id])
+    reviewer: Mapped[User | None] = relationship(
+        back_populates="reviewed_leave_requests",
+        foreign_keys=[reviewer_id],
+    )
 
 
 class SickLeaveRecord(Base):

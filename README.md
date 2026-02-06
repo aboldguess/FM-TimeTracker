@@ -76,7 +76,19 @@ pip install -r requirements.txt
 ```
 
 ### 4) Configure environment variables
-Create `.env` in repo root:
+Create a `.env` file in the repo root (same folder as `README.md`). You can use these commands:
+
+#### Linux/macOS/Raspberry Pi
+```bash
+cp .env.example .env 2>/dev/null || touch .env
+```
+
+#### Windows (PowerShell)
+```powershell
+if (!(Test-Path .env)) { New-Item -ItemType File .env | Out-Null }
+```
+
+Then add the following values:
 ```env
 SECRET_KEY=replace-with-very-strong-secret
 DATABASE_URL=sqlite:///./fm_timetracker.db
@@ -89,10 +101,6 @@ STRIPE_PUBLISHABLE_KEY=
 ```
 
 ### 5) Run locally
-```bash
-./scripts/dev.sh 8000
-```
-or
 ```bash
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
