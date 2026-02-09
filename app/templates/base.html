@@ -18,8 +18,8 @@ Used by all pages to keep UX consistent and discoverable.
       <details class="menu">
         <summary>Admin</summary>
         <div class="menu-items">
-          <span>Manage Users</span>
-          <span>Manage Site</span>
+          <a href="/admin/users">Manage Users</a>
+          <a href="/admin/site">Manage Site</a>
         </div>
       </details>
       {% endif %}
@@ -27,9 +27,9 @@ Used by all pages to keep UX consistent and discoverable.
       <details class="menu">
         <summary>👤 {{ user.full_name }}</summary>
         <div class="menu-items">
-          <span>Learning Zone (FAQ & help)</span>
-          <span>My Details</span>
-          <span>Manage Subscription</span>
+          <a href="/learning-zone">Learning Zone (FAQ & help)</a>
+          <a href="/profile">My Details</a>
+          <a href="/subscription">Manage Subscription</a>
           <a href="/logout">Log out</a>
         </div>
       </details>
