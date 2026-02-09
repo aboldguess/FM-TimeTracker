@@ -24,7 +24,7 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
 
   <div class="panel">
     <h2>Submit leave request</h2>
-    <p class="helper">Requests are routed to admins for review and auditing.</p>
+    <p class="helper">Requests are routed to your line manager for review and auditing.</p>
     <form class="form" method="post" action="/leave-requests/form">
       <div class="form-grid">
         <div>
@@ -72,10 +72,10 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
     </table>
   </div>
 
-  {% if user.role == 'admin' %}
+  {% if pending_approvals %}
   <div class="panel">
-    <h2>Pending approvals (admin)</h2>
-    <p class="helper">Approve or reject requests in the admin workflow using the secure API action.</p>
+    <h2>Pending approvals</h2>
+    <p class="helper">Line managers can approve or reject requests with an audit trail.</p>
     <table class="data-table">
       <thead>
         <tr>
@@ -92,7 +92,14 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
           <td>{{ leave.start_date }} → {{ leave.end_date }}</td>
           <td>{{ leave.reason }}</td>
           <td>
-            <span class="pill">Use /leave-requests/{{ leave.id }}/decision</span>
+            <form class="inline-form" method="post" action="/leave-requests/{{ leave.id }}/decision">
+              <input type="hidden" name="approve" value="true" />
+              <button class="btn" type="submit">Approve</button>
+            </form>
+            <form class="inline-form" method="post" action="/leave-requests/{{ leave.id }}/decision">
+              <input type="hidden" name="approve" value="false" />
+              <button class="btn secondary" type="submit">Reject</button>
+            </form>
           </td>
         </tr>
         {% else %}

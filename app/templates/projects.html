@@ -32,12 +32,31 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
           <input id="name" name="name" type="text" placeholder="Project Atlas" required />
         </div>
         <div>
-          <label for="programme_id">Programme ID (optional)</label>
-          <input id="programme_id" name="programme_id" type="number" />
+          <label for="customer_id">Customer</label>
+          <select id="customer_id" name="customer_id" required>
+            <option value="">Select customer</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}">{{ customer.name }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div>
-          <label for="manager_id">Manager ID (optional)</label>
-          <input id="manager_id" name="manager_id" type="number" />
+          <label for="programme_id">Programme (optional)</label>
+          <select id="programme_id" name="programme_id">
+            <option value="">Select programme</option>
+            {% for programme in programmes %}
+            <option value="{{ programme.id }}">{{ programme.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="manager_id">Delivery manager (optional)</label>
+          <select id="manager_id" name="manager_id">
+            <option value="">Select manager</option>
+            {% for manager in managers %}
+            <option value="{{ manager.id }}">{{ manager.full_name }}</option>
+            {% endfor %}
+          </select>
         </div>
         <div>
           <label for="planned_hours">Planned hours</label>
@@ -66,6 +85,7 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
       <thead>
         <tr>
           <th>Name</th>
+          <th>Customer</th>
           <th>Status</th>
           <th>Progress</th>
           <th>Planned hours</th>
@@ -75,13 +95,14 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
         {% for project in recent_projects %}
         <tr>
           <td>{{ project.name }}</td>
+          <td>{{ project.customer.name if project.customer else '-' }}</td>
           <td><span class="pill">{{ project.status }}</span></td>
           <td>{{ project.progress_percent }}%</td>
           <td>{{ project.planned_hours }}</td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="4" class="instruction">No projects created yet.</td>
+          <td colspan="5" class="instruction">No projects created yet.</td>
         </tr>
         {% endfor %}
       </tbody>

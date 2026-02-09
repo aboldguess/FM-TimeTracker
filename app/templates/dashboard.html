@@ -6,7 +6,7 @@
   <p class="instruction">Use API endpoints to CRUD records. This dashboard summarizes your current operational picture.</p>
   <div class="card-grid">
     <article class="card"><h3>Total projects</h3><p>{{ project_count }}</p></article>
-    <article class="card"><h3>Your logged hours</h3><p>{{ '%.2f'|format(timesheet_hours or 0) }}</p></article>
+    <article class="card"><h3>Approved logged hours</h3><p>{{ '%.2f'|format(timesheet_hours or 0) }}</p></article>
     <article class="card"><h3>Pending leave approvals</h3><p>{{ pending_leave }}</p></article>
   </div>
   <div class="panel">

@@ -32,8 +32,13 @@ Mini-README: Programme management workspace with portfolio visibility and progra
           <input id="name" name="name" type="text" placeholder="Growth Portfolio 2026" required />
         </div>
         <div>
-          <label for="manager_id">Manager ID (optional)</label>
-          <input id="manager_id" name="manager_id" type="number" />
+          <label for="manager_id">Programme manager (optional)</label>
+          <select id="manager_id" name="manager_id">
+            <option value="">Select manager</option>
+            {% for manager in managers %}
+            <option value="{{ manager.id }}">{{ manager.full_name }}</option>
+            {% endfor %}
+          </select>
         </div>
       </div>
       <div>
