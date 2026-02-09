@@ -1,0 +1,31 @@
+<!--
+Mini-README: Subscription management landing page explaining plan visibility and billing actions.
+Provides space for future Stripe integration controls and status messaging.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel">
+  <h1>Manage Subscription</h1>
+  <p class="instruction">
+    Review your plan, billing cadence, and payment method. Keep this up to date to avoid service interruptions.
+  </p>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Current plan</h3>
+      <p>View your active subscription tier, included entitlements, and renewal date.</p>
+    </article>
+    <article class="card">
+      <h3>Payment method</h3>
+      <p>Update your card or billing contact details to ensure smooth renewals.</p>
+    </article>
+    <article class="card">
+      <h3>Upgrade or downgrade</h3>
+      <p>Choose a tier that matches your team size and reporting needs.</p>
+    </article>
+  </div>
+  <div class="panel">
+    <h2>Billing support</h2>
+    <p>If you need an invoice or a custom plan, contact your admin or finance lead.</p>
+  </div>
+</section>
+{% endblock %}

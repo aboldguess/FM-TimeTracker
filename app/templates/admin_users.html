@@ -1,0 +1,31 @@
+<!--
+Mini-README: Admin user management overview page for CRUD workflows and policy reminders.
+Designed as an admin-only landing page before data tables and forms are implemented.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel">
+  <h1>Manage Users</h1>
+  <p class="instruction">
+    Admins can create, update, and deactivate user accounts to keep access aligned with staffing and compliance needs.
+  </p>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Onboard new users</h3>
+      <p>Add staff members, assign roles, and set cost/bill rates for accurate financial reporting.</p>
+    </article>
+    <article class="card">
+      <h3>Maintain access</h3>
+      <p>Update roles, adjust permissions, and deactivate accounts for offboarded staff.</p>
+    </article>
+    <article class="card">
+      <h3>Compliance checks</h3>
+      <p>Ensure every user has correct contact information and aligns with project staffing policies.</p>
+    </article>
+  </div>
+  <div class="panel">
+    <h2>Admin reminder</h2>
+    <p>Changes to user roles immediately affect access to projects, reporting, and configuration settings.</p>
+  </div>
+</section>
+{% endblock %}

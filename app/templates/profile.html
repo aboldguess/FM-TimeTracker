@@ -1,0 +1,31 @@
+<!--
+Mini-README: Profile page placeholder for user detail management and avatar updates.
+Includes clear calls to action and guidance text for future CRUD forms.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel">
+  <h1>My Details</h1>
+  <p class="instruction">
+    Keep your personal details accurate for billing and reporting. Update your name, contact details, and profile photo here.
+  </p>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Profile information</h3>
+      <p>Review your full name, email address, and role. Contact an admin if you need role changes.</p>
+    </article>
+    <article class="card">
+      <h3>Profile photo</h3>
+      <p>Upload a clear headshot so your team can recognize you in project and timesheet reports.</p>
+    </article>
+    <article class="card">
+      <h3>Security</h3>
+      <p>Plan to update your password regularly and sign out on shared devices.</p>
+    </article>
+  </div>
+  <div class="panel">
+    <h2>Need help?</h2>
+    <p>Visit the Learning Zone for walkthroughs or reach out to an admin for account updates.</p>
+  </div>
+</section>
+{% endblock %}
