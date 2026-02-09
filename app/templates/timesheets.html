@@ -1,0 +1,95 @@
+<!--
+Mini-README: Timesheet operations hub for logging time, tracking totals, and auditing recent entries.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Timesheets</h1>
+  <p class="instruction">Log work in real time, review recent entries, and keep project delivery transparent.</p>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Total logged hours</h3>
+      <p>{{ '%.2f'|format(total_hours or 0) }}</p>
+    </article>
+    <article class="card">
+      <h3>Entries on record</h3>
+      <p>{{ entry_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Role-based guidance</h3>
+      <p>
+        {% if user.role == 'admin' %}
+        Review team activity and compliance across programmes.
+        {% elif user.role == 'programme_manager' %}
+        Validate effort allocations against programme budgets.
+        {% elif user.role == 'project_manager' %}
+        Monitor task burn-downs and resourcing accuracy.
+        {% else %}
+        Capture your daily activity for billing and payroll.
+        {% endif %}
+      </p>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>Log new time</h2>
+    <p class="helper">This form writes directly to the secure timesheet service. Use project/task IDs if available.</p>
+    <form class="form" method="post" action="/timesheets/form">
+      <div class="form-grid">
+        <div>
+          <label for="entry_date">Entry date</label>
+          <input id="entry_date" name="entry_date" type="date" required />
+        </div>
+        <div>
+          <label for="hours">Hours</label>
+          <input id="hours" name="hours" type="number" step="0.25" min="0.25" max="24" required />
+        </div>
+        <div>
+          <label for="project_id">Project ID (optional)</label>
+          <input id="project_id" name="project_id" type="number" />
+        </div>
+        <div>
+          <label for="task_id">Task ID (optional)</label>
+          <input id="task_id" name="task_id" type="number" />
+        </div>
+      </div>
+      <div>
+        <label for="description">Work description</label>
+        <textarea id="description" name="description" placeholder="Describe what you worked on..." required></textarea>
+      </div>
+      <button class="btn" type="submit">Submit time entry</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Recent entries</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Hours</th>
+          <th>Project</th>
+          <th>Task</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in recent_entries %}
+        <tr>
+          <td>{{ entry.entry_date }}</td>
+          <td>{{ '%.2f'|format(entry.hours) }}</td>
+          <td>{{ entry.project_id or '-' }}</td>
+          <td>{{ entry.task_id or '-' }}</td>
+          <td>{{ entry.description }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="instruction">No entries yet. Submit your first timesheet above.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

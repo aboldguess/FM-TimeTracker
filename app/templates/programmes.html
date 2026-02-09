@@ -1,0 +1,73 @@
+<!--
+Mini-README: Programme management workspace with portfolio visibility and programme creation workflow.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Programmes</h1>
+  <p class="instruction">Coordinate multi-project initiatives and monitor outcomes across your portfolio.</p>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Total programmes</h3>
+      <p>{{ programme_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Managed programmes</h3>
+      <p>{{ managed_programmes }}</p>
+    </article>
+    <article class="card">
+      <h3>Strategic focus</h3>
+      <p>Align scope, stakeholders, and funding with your delivery strategy.</p>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>Create new programme</h2>
+    <p class="helper">Admins and programme managers can create programme containers.</p>
+    <form class="form" method="post" action="/programmes/form">
+      <div class="form-grid">
+        <div>
+          <label for="name">Programme name</label>
+          <input id="name" name="name" type="text" placeholder="Growth Portfolio 2026" required />
+        </div>
+        <div>
+          <label for="manager_id">Manager ID (optional)</label>
+          <input id="manager_id" name="manager_id" type="number" />
+        </div>
+      </div>
+      <div>
+        <label for="description">Programme charter</label>
+        <textarea id="description" name="description" placeholder="Document goals, benefits, and governance" required></textarea>
+      </div>
+      <button class="btn" type="submit">Create programme</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Recent programmes</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Manager ID</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for programme in recent_programmes %}
+        <tr>
+          <td>{{ programme.name }}</td>
+          <td>{{ programme.manager_id or '-' }}</td>
+          <td>{{ programme.description }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" class="instruction">No programmes created yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

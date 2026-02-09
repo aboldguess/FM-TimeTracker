@@ -38,8 +38,41 @@ Used by all pages to keep UX consistent and discoverable.
       {% endif %}
     </div>
   </nav>
-  <main class="container">
-    {% block content %}{% endblock %}
-  </main>
+  <div class="app-shell">
+    {% if user %}
+    <aside class="sidebar">
+      <h2>Workspace</h2>
+      <p>
+        {% if user.role == 'admin' %}
+        Admin control hub
+        {% elif user.role == 'programme_manager' %}
+        Programme oversight hub
+        {% elif user.role == 'project_manager' %}
+        Project delivery hub
+        {% else %}
+        Personal time & leave hub
+        {% endif %}
+      </p>
+      <nav class="sidebar-nav">
+        <a href="/dashboard" class="{% if request.url.path == '/dashboard' %}active{% endif %}">My Dashboard</a>
+        <a href="/timesheets" class="{% if request.url.path == '/timesheets' %}active{% endif %}">Timesheets</a>
+        <a href="/leave-requests" class="{% if request.url.path == '/leave-requests' %}active{% endif %}">Leave Requests</a>
+        <a href="/projects" class="{% if request.url.path == '/projects' %}active{% endif %}">Projects</a>
+        <a href="/programmes" class="{% if request.url.path == '/programmes' %}active{% endif %}">Programmes</a>
+        <a href="/company" class="{% if request.url.path == '/company' %}active{% endif %}">Company</a>
+        <a href="/site-management" class="{% if request.url.path == '/site-management' %}active{% endif %}">
+          Site Management
+          {% if user.role != 'admin' %}
+          <span class="badge">Admin</span>
+          {% endif %}
+        </a>
+      </nav>
+      <p class="helper">Need help? Visit the Learning Zone for step-by-step walkthroughs.</p>
+    </aside>
+    {% endif %}
+    <main class="container main-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
 </body>
 </html>

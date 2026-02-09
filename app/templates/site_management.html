@@ -1,0 +1,121 @@
+<!--
+Mini-README: Admin-only site management console for subscriptions, configuration, and platform governance.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Site Management</h1>
+  <p class="instruction">Admin-only controls for billing, configuration, and operational readiness.</p>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Active users</h3>
+      <p>{{ active_users }}</p>
+    </article>
+    <article class="card">
+      <h3>Subscription tiers</h3>
+      <p>{{ tier_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Config keys</h3>
+      <p>{{ config_count }}</p>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>Subscription tiers</h2>
+    <p class="helper">Create or update tiers before syncing Stripe pricing.</p>
+    <form class="form" method="post" action="/subscription-tiers">
+      <div class="form-grid">
+        <div>
+          <label for="name">Tier name</label>
+          <input id="name" name="name" type="text" placeholder="Pro" required />
+        </div>
+        <div>
+          <label for="monthly_price">Monthly price</label>
+          <input id="monthly_price" name="monthly_price" type="number" step="0.01" min="0" required />
+        </div>
+        <div>
+          <label for="stripe_price_id">Stripe price ID (optional)</label>
+          <input id="stripe_price_id" name="stripe_price_id" type="text" />
+        </div>
+      </div>
+      <div>
+        <label for="features">Tier features</label>
+        <textarea id="features" name="features" placeholder="Describe included features"></textarea>
+      </div>
+      <button class="btn" type="submit">Save tier</button>
+    </form>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Monthly price</th>
+          <th>Stripe ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tier in subscription_tiers %}
+        <tr>
+          <td>{{ tier.name }}</td>
+          <td>{{ tier.monthly_price }}</td>
+          <td>{{ tier.stripe_price_id or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" class="instruction">No tiers configured yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Site configuration</h2>
+    <p class="helper">Centralise platform settings for notifications, branding, and integrations.</p>
+    <form class="form" method="post" action="/admin/site-config">
+      <div class="form-grid">
+        <div>
+          <label for="key">Config key</label>
+          <input id="key" name="key" type="text" placeholder="support_email" required />
+        </div>
+        <div>
+          <label for="value">Config value</label>
+          <input id="value" name="value" type="text" placeholder="support@company.com" required />
+        </div>
+      </div>
+      <button class="btn secondary" type="submit">Update configuration</button>
+    </form>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Key</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for config in configs %}
+        <tr>
+          <td>{{ config.key }}</td>
+          <td>{{ config.value }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2" class="instruction">No configuration values set.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Operational checklist</h2>
+    <ul>
+      <li>Sync Stripe keys and ensure webhook coverage.</li>
+      <li>Verify admin users and enable MFA policies where possible.</li>
+      <li>Review site config values after each deployment.</li>
+      <li>Export audit logs and store in compliance archives.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}
