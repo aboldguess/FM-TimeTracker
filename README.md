@@ -5,6 +5,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 ## Major Feature Log
 1. **Role-aware operations hubs + sidebar navigation** (branch: current working branch) – Added context-aware sidebar and dedicated pages for timesheets, leave, projects, programmes, company, and site management.
 2. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
+3. **Timesheet governance + customer management foundations** (branch: current working branch) – Added timesheet weekly submission/approval workflow, audit trails, line management, working-hours defaults, and customer CRUD to improve compliance and data quality.
 
 ## Feature Status Roadmap
 ### User-Facing
@@ -19,6 +20,8 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - [x] Cost/bill rate configuration per user for P&L inputs
 - [x] Admin/profile menu UX placeholders with learning zone/my details/subscription options
 - [x] Role-aware sidebar and operational pages for timesheets, leave, projects, programmes, company, and site management
+- [x] Customer directory with CRUD and project-customer linking
+- [x] Timesheet weekly submissions, approvals, and audit trail visibility
 - [ ] Rich drag-drop planning UI and Gantt visualizations
 - [ ] Email/Slack notifications for approvals and project alerts
 
@@ -30,7 +33,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - [x] Pytest smoke tests
 - [ ] Full CI/CD pipeline (lint, test, security scans)
 - [ ] Postgres-first production migrations (Alembic)
-- [ ] Fine-grained audit log trail
+- [x] Fine-grained audit log trail
 
 ---
 

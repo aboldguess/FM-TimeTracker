@@ -1,6 +1,7 @@
 """Pydantic schemas.
 
-Defines validation for incoming payloads to keep endpoints safe and explicit.
+Defines validation for incoming payloads to keep endpoints safe and explicit,
+including line management and working-hour inputs.
 """
 
 from datetime import date
@@ -17,6 +18,15 @@ class UserCreate(BaseModel):
     role: Role
     cost_rate: float = 0
     bill_rate: float = 0
+    manager_id: int | None = None
+    leave_entitlement_days: float = 25
+    working_hours_mon: float = 8
+    working_hours_tue: float = 8
+    working_hours_wed: float = 8
+    working_hours_thu: float = 8
+    working_hours_fri: float = 8
+    working_hours_sat: float = 0
+    working_hours_sun: float = 0
 
 
 class UserUpdate(BaseModel):
@@ -25,6 +35,14 @@ class UserUpdate(BaseModel):
     cost_rate: float | None = None
     bill_rate: float | None = None
     leave_entitlement_days: float | None = None
+    manager_id: int | None = None
+    working_hours_mon: float | None = None
+    working_hours_tue: float | None = None
+    working_hours_wed: float | None = None
+    working_hours_thu: float | None = None
+    working_hours_fri: float | None = None
+    working_hours_sat: float | None = None
+    working_hours_sun: float | None = None
 
 
 class LoginRequest(BaseModel):
@@ -35,6 +53,7 @@ class LoginRequest(BaseModel):
 class ProjectCreate(BaseModel):
     name: str
     description: str
+    customer_id: int | None = None
     programme_id: int | None = None
     manager_id: int | None = None
     planned_hours: float = 0

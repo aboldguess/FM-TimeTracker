@@ -28,13 +28,15 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
 
   <div class="panel">
     <h2>Company directory snapshot</h2>
-    <p class="helper">Admins can manage users directly from the Admin menu.</p>
+    <p class="helper">Admins can manage users directly here or via the Admin menu.</p>
     <table class="data-table">
       <thead>
         <tr>
           <th>Name</th>
           <th>Email</th>
           <th>Role</th>
+          <th>Line manager</th>
+          <th>Leave entitlement (days)</th>
           <th>Status</th>
         </tr>
       </thead>
@@ -44,16 +46,258 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
           <td>{{ member.full_name }}</td>
           <td>{{ member.email }}</td>
           <td><span class="pill">{{ member.role.value }}</span></td>
+          <td>{{ member.manager.full_name if member.manager else '-' }}</td>
+          <td>{{ '%.1f'|format(member.leave_entitlement_days) }}</td>
           <td>{{ 'Active' if member.active else 'Inactive' }}</td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="4" class="instruction">No users found.</td>
+          <td colspan="6" class="instruction">No users found.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <div class="panel">
+    <h2>Timesheet approvals</h2>
+    <p class="helper">Line managers can approve submitted weeks with an optional note.</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Week start</th>
+          <th>Status</th>
+          <th>Note</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for summary in pending_timesheets %}
+        <tr>
+          <td>{{ summary.user.full_name }}</td>
+          <td>{{ summary.week_start }}</td>
+          <td><span class="pill">{{ summary.status.value }}</span></td>
+          <td>{{ summary.submit_note or '-' }}</td>
+          <td>
+            {% if summary.status.value == 'submitted' %}
+            <form class="inline-form" method="post" action="/timesheets/approve-week">
+              <input type="hidden" name="week_start" value="{{ summary.week_start }}" />
+              <input type="hidden" name="user_id" value="{{ summary.user_id }}" />
+              <input type="text" name="approval_note" placeholder="Optional approval note" />
+              <button class="btn" type="submit">Approve</button>
+            </form>
+            {% elif summary.status.value == 'approved' %}
+            <form class="inline-form" method="post" action="/timesheets/unapprove-week">
+              <input type="hidden" name="week_start" value="{{ summary.week_start }}" />
+              <input type="hidden" name="user_id" value="{{ summary.user_id }}" />
+              <input type="text" name="approval_note" placeholder="Optional rollback note" />
+              <button class="btn secondary" type="submit">Unapprove</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="5" class="instruction">No submitted timesheets awaiting approval.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if user.role == 'admin' %}
+  <div class="panel">
+    <h2>Create user</h2>
+    <p class="helper">Admins can add users and assign their line manager and working hours.</p>
+    <form class="form" method="post" action="/company/users/create">
+      <div class="form-grid">
+        <div>
+          <label for="full_name">Full name</label>
+          <input id="full_name" name="full_name" type="text" required />
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required />
+        </div>
+        <div>
+          <label for="password">Temporary password</label>
+          <input id="password" name="password" type="password" required />
+        </div>
+        <div>
+          <label for="role">Role</label>
+          <select id="role" name="role" required>
+            <option value="staff">Staff</option>
+            <option value="project_manager">Project manager</option>
+            <option value="programme_manager">Programme manager</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div>
+          <label for="manager_id">Line manager</label>
+          <select id="manager_id" name="manager_id">
+            <option value="">Select manager</option>
+            {% for member in users %}
+            <option value="{{ member.id }}">{{ member.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="leave_entitlement_days">Leave entitlement (days)</label>
+          <input id="leave_entitlement_days" name="leave_entitlement_days" type="number" step="0.5" min="0" value="25" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label for="working_hours_mon">Mon hours</label>
+          <input id="working_hours_mon" name="working_hours_mon" type="number" step="0.25" min="0" value="{{ defaults.mon }}" />
+        </div>
+        <div>
+          <label for="working_hours_tue">Tue hours</label>
+          <input id="working_hours_tue" name="working_hours_tue" type="number" step="0.25" min="0" value="{{ defaults.tue }}" />
+        </div>
+        <div>
+          <label for="working_hours_wed">Wed hours</label>
+          <input id="working_hours_wed" name="working_hours_wed" type="number" step="0.25" min="0" value="{{ defaults.wed }}" />
+        </div>
+        <div>
+          <label for="working_hours_thu">Thu hours</label>
+          <input id="working_hours_thu" name="working_hours_thu" type="number" step="0.25" min="0" value="{{ defaults.thu }}" />
+        </div>
+        <div>
+          <label for="working_hours_fri">Fri hours</label>
+          <input id="working_hours_fri" name="working_hours_fri" type="number" step="0.25" min="0" value="{{ defaults.fri }}" />
+        </div>
+        <div>
+          <label for="working_hours_sat">Sat hours</label>
+          <input id="working_hours_sat" name="working_hours_sat" type="number" step="0.25" min="0" value="{{ defaults.sat }}" />
+        </div>
+        <div>
+          <label for="working_hours_sun">Sun hours</label>
+          <input id="working_hours_sun" name="working_hours_sun" type="number" step="0.25" min="0" value="{{ defaults.sun }}" />
+        </div>
+      </div>
+      <button class="btn" type="submit">Create user</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Update user settings</h2>
+    <p class="helper">Update line management and working hour expectations for existing users.</p>
+    <form class="form" method="post" action="/company/users/update">
+      <div class="form-grid">
+        <div>
+          <label for="user_id">User</label>
+          <select id="user_id" name="user_id" required>
+            {% for member in users %}
+            <option value="{{ member.id }}">{{ member.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="update_manager_id">Line manager</label>
+          <select id="update_manager_id" name="manager_id">
+            <option value="">Select manager</option>
+            {% for member in users %}
+            <option value="{{ member.id }}">{{ member.full_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="update_leave_entitlement">Leave entitlement (days)</label>
+          <input id="update_leave_entitlement" name="leave_entitlement_days" type="number" step="0.5" min="0" />
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label for="update_hours_mon">Mon hours</label>
+          <input id="update_hours_mon" name="working_hours_mon" type="number" step="0.25" min="0" />
+        </div>
+        <div>
+          <label for="update_hours_tue">Tue hours</label>
+          <input id="update_hours_tue" name="working_hours_tue" type="number" step="0.25" min="0" />
+        </div>
+        <div>
+          <label for="update_hours_wed">Wed hours</label>
+          <input id="update_hours_wed" name="working_hours_wed" type="number" step="0.25" min="0" />
+        </div>
+        <div>
+          <label for="update_hours_thu">Thu hours</label>
+          <input id="update_hours_thu" name="working_hours_thu" type="number" step="0.25" min="0" />
+        </div>
+        <div>
+          <label for="update_hours_fri">Fri hours</label>
+          <input id="update_hours_fri" name="working_hours_fri" type="number" step="0.25" min="0" />
+        </div>
+        <div>
+          <label for="update_hours_sat">Sat hours</label>
+          <input id="update_hours_sat" name="working_hours_sat" type="number" step="0.25" min="0" />
+        </div>
+        <div>
+          <label for="update_hours_sun">Sun hours</label>
+          <input id="update_hours_sun" name="working_hours_sun" type="number" step="0.25" min="0" />
+        </div>
+      </div>
+      <button class="btn secondary" type="submit">Update user settings</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Update default working hours</h2>
+    <p class="helper">Defaults apply to newly created users and can be overridden per employee.</p>
+    <form class="form" method="post" action="/company/defaults">
+      <div class="form-grid">
+        <div>
+          <label for="default_hours_mon">Mon default</label>
+          <input id="default_hours_mon" name="default_hours_mon" type="number" step="0.25" min="0" value="{{ defaults.mon }}" required />
+        </div>
+        <div>
+          <label for="default_hours_tue">Tue default</label>
+          <input id="default_hours_tue" name="default_hours_tue" type="number" step="0.25" min="0" value="{{ defaults.tue }}" required />
+        </div>
+        <div>
+          <label for="default_hours_wed">Wed default</label>
+          <input id="default_hours_wed" name="default_hours_wed" type="number" step="0.25" min="0" value="{{ defaults.wed }}" required />
+        </div>
+        <div>
+          <label for="default_hours_thu">Thu default</label>
+          <input id="default_hours_thu" name="default_hours_thu" type="number" step="0.25" min="0" value="{{ defaults.thu }}" required />
+        </div>
+        <div>
+          <label for="default_hours_fri">Fri default</label>
+          <input id="default_hours_fri" name="default_hours_fri" type="number" step="0.25" min="0" value="{{ defaults.fri }}" required />
+        </div>
+        <div>
+          <label for="default_hours_sat">Sat default</label>
+          <input id="default_hours_sat" name="default_hours_sat" type="number" step="0.25" min="0" value="{{ defaults.sat }}" required />
+        </div>
+        <div>
+          <label for="default_hours_sun">Sun default</label>
+          <input id="default_hours_sun" name="default_hours_sun" type="number" step="0.25" min="0" value="{{ defaults.sun }}" required />
+        </div>
+      </div>
+      <button class="btn secondary" type="submit">Save defaults</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Deactivate or reactivate users</h2>
+    <p class="helper">Use this to pause access for leavers or contractors.</p>
+    <form class="form" method="post" action="/company/users/toggle-active">
+      <div class="form-grid">
+        <div>
+          <label for="toggle_user_id">User</label>
+          <select id="toggle_user_id" name="user_id" required>
+            {% for member in users %}
+            <option value="{{ member.id }}">{{ member.full_name }} ({{ 'Active' if member.active else 'Inactive' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <button class="btn secondary" type="submit">Toggle active status</button>
+    </form>
+  </div>
+  {% endif %}
 
   <div class="panel">
     <h2>Governance checklist</h2>
