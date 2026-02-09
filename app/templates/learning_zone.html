@@ -1,0 +1,35 @@
+<!--
+Mini-README: Learning Zone page that provides in-app guidance, FAQs, and onboarding steps.
+Structured as a single-column content layout with cards for scannable help topics.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel">
+  <h1>Learning Zone</h1>
+  <p class="instruction">
+    Welcome to the Learning Zone. Everything you need to get started lives here, so you never have to hunt for help.
+  </p>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Getting started</h3>
+      <p>Log your hours daily, confirm your cost/bill rates with your manager, and keep project allocations up to date.</p>
+    </article>
+    <article class="card">
+      <h3>FAQ</h3>
+      <p>Need to reset your password, submit leave, or understand billing? Ask your admin and use the dashboard metrics as a guide.</p>
+    </article>
+    <article class="card">
+      <h3>Support checklist</h3>
+      <p>Confirm your profile details, review your subscription status, and contact your admin for access changes.</p>
+    </article>
+  </div>
+  <div class="panel">
+    <h2>Next steps</h2>
+    <ul>
+      <li>Visit <strong>My Details</strong> to keep your contact and role information accurate.</li>
+      <li>Check <strong>Manage Subscription</strong> for plan and billing visibility.</li>
+      <li>Admins can open the Admin menu for user and site configuration tasks.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

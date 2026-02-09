@@ -164,6 +164,61 @@ def dashboard(request: Request, current_user: User = Depends(get_current_user), 
     )
 
 
+@app.get("/learning-zone", response_class=HTMLResponse)
+def learning_zone(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        "learning_zone.html",
+        {
+            "request": request,
+            "user": current_user,
+        },
+    )
+
+
+@app.get("/profile", response_class=HTMLResponse)
+def profile(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        "profile.html",
+        {
+            "request": request,
+            "user": current_user,
+        },
+    )
+
+
+@app.get("/subscription", response_class=HTMLResponse)
+def subscription(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        "subscription.html",
+        {
+            "request": request,
+            "user": current_user,
+        },
+    )
+
+
+@app.get("/admin/users", response_class=HTMLResponse)
+def admin_users(request: Request, current_user: User = Depends(require_roles(Role.ADMIN))):
+    return templates.TemplateResponse(
+        "admin_users.html",
+        {
+            "request": request,
+            "user": current_user,
+        },
+    )
+
+
+@app.get("/admin/site", response_class=HTMLResponse)
+def admin_site(request: Request, current_user: User = Depends(require_roles(Role.ADMIN))):
+    return templates.TemplateResponse(
+        "admin_site.html",
+        {
+            "request": request,
+            "user": current_user,
+        },
+    )
+
+
 @app.post("/users")
 def create_user(payload: UserCreate, actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER, Role.PROJECT_MANAGER)), db: Session = Depends(get_db)):
     if not can_manage_target(actor, payload.role):

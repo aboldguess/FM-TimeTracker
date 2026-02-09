@@ -1,0 +1,31 @@
+<!--
+Mini-README: Admin site configuration overview for platform-wide settings.
+Summarizes operational controls to prepare for future configuration forms.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section class="panel">
+  <h1>Manage Site</h1>
+  <p class="instruction">
+    Configure the FM TimeTracker platform to match your organisation's policies, billing model, and reporting needs.
+  </p>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Platform settings</h3>
+      <p>Adjust global defaults, reporting rules, and workflow thresholds used across teams.</p>
+    </article>
+    <article class="card">
+      <h3>Subscription tiers</h3>
+      <p>Create, edit, and retire subscription tiers to align pricing with your market.</p>
+    </article>
+    <article class="card">
+      <h3>Integrations</h3>
+      <p>Review Stripe configuration, notification channels, and compliance requirements.</p>
+    </article>
+  </div>
+  <div class="panel">
+    <h2>Operational guidance</h2>
+    <p>Document every change so finance and compliance teams can track platform updates.</p>
+  </div>
+</section>
+{% endblock %}
