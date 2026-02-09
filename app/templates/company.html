@@ -1,0 +1,68 @@
+<!--
+Mini-README: Company overview page providing org-level insights, policy checkpoints, and directory snapshots.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Company</h1>
+  <p class="instruction">Keep leadership, compliance, and subscription health transparent for every stakeholder.</p>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Total users</h3>
+      <p>{{ user_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Admins</h3>
+      <p>{{ admin_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Subscription tiers</h3>
+      <p>{{ tier_count }}</p>
+    </article>
+    <article class="card">
+      <h3>Configuration keys</h3>
+      <p>{{ config_count }}</p>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>Company directory snapshot</h2>
+    <p class="helper">Admins can manage users directly from the Admin menu.</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for member in recent_users %}
+        <tr>
+          <td>{{ member.full_name }}</td>
+          <td>{{ member.email }}</td>
+          <td><span class="pill">{{ member.role.value }}</span></td>
+          <td>{{ 'Active' if member.active else 'Inactive' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="instruction">No users found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Governance checklist</h2>
+    <ul>
+      <li>Confirm subscription tier aligns with current headcount.</li>
+      <li>Review admin coverage and ensure backup administrators exist.</li>
+      <li>Audit leave entitlement policies quarterly.</li>
+      <li>Capture project margin forecasts using resource requirements.</li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

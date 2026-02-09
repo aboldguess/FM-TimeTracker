@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
 from app.database import Base, engine, get_db
@@ -160,6 +160,211 @@ def dashboard(request: Request, current_user: User = Depends(get_current_user), 
             "project_count": project_count,
             "timesheet_hours": timesheet_hours,
             "pending_leave": pending_leave,
+        },
+    )
+
+
+@app.get("/timesheets", response_class=HTMLResponse)
+def timesheets(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    total_hours = db.scalar(select(func.coalesce(func.sum(TimesheetEntry.hours), 0.0)).where(TimesheetEntry.user_id == current_user.id))
+    entry_count = db.scalar(select(func.count(TimesheetEntry.id)).where(TimesheetEntry.user_id == current_user.id)) or 0
+    recent_entries = db.scalars(
+        select(TimesheetEntry).where(TimesheetEntry.user_id == current_user.id).order_by(TimesheetEntry.entry_date.desc()).limit(6)
+    ).all()
+    return templates.TemplateResponse(
+        "timesheets.html",
+        {
+            "request": request,
+            "user": current_user,
+            "total_hours": total_hours,
+            "entry_count": entry_count,
+            "recent_entries": recent_entries,
+        },
+    )
+
+
+@app.post("/timesheets/form")
+def create_timesheet_form(
+    entry_date: date = Form(...),
+    hours: float = Form(...),
+    description: str = Form(...),
+    project_id: int | None = Form(None),
+    task_id: int | None = Form(None),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if hours <= 0 or hours > 24:
+        raise HTTPException(status_code=400, detail="Hours must be between 0 and 24")
+    entry = TimesheetEntry(
+        user_id=current_user.id,
+        project_id=project_id,
+        task_id=task_id,
+        entry_date=entry_date,
+        hours=hours,
+        description=description,
+    )
+    db.add(entry)
+    if task_id:
+        task = db.get(Task, task_id)
+        if task:
+            task.logged_hours += hours
+    db.commit()
+    return RedirectResponse("/timesheets", status_code=303)
+
+
+@app.get("/leave-requests", response_class=HTMLResponse)
+def leave_requests(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    my_requests = db.scalar(select(func.count(LeaveRequest.id)).where(LeaveRequest.user_id == current_user.id)) or 0
+    my_pending = db.scalar(
+        select(func.count(LeaveRequest.id)).where(LeaveRequest.user_id == current_user.id, LeaveRequest.status == LeaveStatus.PENDING)
+    ) or 0
+    recent_leave = db.scalars(
+        select(LeaveRequest).where(LeaveRequest.user_id == current_user.id).order_by(LeaveRequest.start_date.desc()).limit(5)
+    ).all()
+    pending_approvals = db.scalars(
+        select(LeaveRequest).options(selectinload(LeaveRequest.user)).where(LeaveRequest.status == LeaveStatus.PENDING).limit(5)
+    ).all()
+    return templates.TemplateResponse(
+        "leave_requests.html",
+        {
+            "request": request,
+            "user": current_user,
+            "my_requests": my_requests,
+            "my_pending": my_pending,
+            "recent_leave": recent_leave,
+            "pending_approvals": pending_approvals,
+        },
+    )
+
+
+@app.post("/leave-requests/form")
+def request_leave_form(
+    start_date: date = Form(...),
+    end_date: date = Form(...),
+    reason: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if end_date < start_date:
+        raise HTTPException(status_code=400, detail="End date must be after start date")
+    leave = LeaveRequest(user_id=current_user.id, start_date=start_date, end_date=end_date, reason=reason)
+    db.add(leave)
+    db.commit()
+    return RedirectResponse("/leave-requests", status_code=303)
+
+
+@app.get("/projects", response_class=HTMLResponse)
+def projects(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    total_projects = db.scalar(select(func.count(Project.id))) or 0
+    active_projects = db.scalar(select(func.count(Project.id)).where(Project.status != "completed")) or 0
+    recent_projects = db.scalars(select(Project).order_by(Project.id.desc()).limit(6)).all()
+    return templates.TemplateResponse(
+        "projects.html",
+        {
+            "request": request,
+            "user": current_user,
+            "total_projects": total_projects,
+            "active_projects": active_projects,
+            "recent_projects": recent_projects,
+        },
+    )
+
+
+@app.post("/projects/form")
+def create_project_form(
+    name: str = Form(...),
+    description: str = Form(...),
+    programme_id: int | None = Form(None),
+    manager_id: int | None = Form(None),
+    planned_hours: float = Form(0),
+    planned_material_budget: float = Form(0),
+    planned_subcontract_budget: float = Form(0),
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER, Role.PROJECT_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    project = Project(
+        name=name,
+        description=description,
+        programme_id=programme_id,
+        manager_id=manager_id,
+        planned_hours=planned_hours,
+        planned_material_budget=planned_material_budget,
+        planned_subcontract_budget=planned_subcontract_budget,
+    )
+    db.add(project)
+    db.commit()
+    return RedirectResponse("/projects", status_code=303)
+
+
+@app.get("/programmes", response_class=HTMLResponse)
+def programmes(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    programme_count = db.scalar(select(func.count(Programme.id))) or 0
+    managed_programmes = db.scalar(select(func.count(Programme.id)).where(Programme.manager_id.is_not(None))) or 0
+    recent_programmes = db.scalars(select(Programme).order_by(Programme.id.desc()).limit(6)).all()
+    return templates.TemplateResponse(
+        "programmes.html",
+        {
+            "request": request,
+            "user": current_user,
+            "programme_count": programme_count,
+            "managed_programmes": managed_programmes,
+            "recent_programmes": recent_programmes,
+        },
+    )
+
+
+@app.post("/programmes/form")
+def create_programme_form(
+    name: str = Form(...),
+    description: str = Form(...),
+    manager_id: int | None = Form(None),
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    programme = Programme(name=name, description=description, manager_id=manager_id)
+    db.add(programme)
+    db.commit()
+    return RedirectResponse("/programmes", status_code=303)
+
+
+@app.get("/company", response_class=HTMLResponse)
+def company(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    user_count = db.scalar(select(func.count(User.id))) or 0
+    admin_count = db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN)) or 0
+    tier_count = db.scalar(select(func.count(SubscriptionTier.id))) or 0
+    config_count = db.scalar(select(func.count(AppConfig.id))) or 0
+    recent_users = db.scalars(select(User).order_by(User.created_at.desc()).limit(6)).all()
+    return templates.TemplateResponse(
+        "company.html",
+        {
+            "request": request,
+            "user": current_user,
+            "user_count": user_count,
+            "admin_count": admin_count,
+            "tier_count": tier_count,
+            "config_count": config_count,
+            "recent_users": recent_users,
+        },
+    )
+
+
+@app.get("/site-management", response_class=HTMLResponse)
+def site_management(request: Request, current_user: User = Depends(require_roles(Role.ADMIN)), db: Session = Depends(get_db)):
+    tier_count = db.scalar(select(func.count(SubscriptionTier.id))) or 0
+    config_count = db.scalar(select(func.count(AppConfig.id))) or 0
+    active_users = db.scalar(select(func.count(User.id)).where(User.active.is_(True))) or 0
+    subscription_tiers = db.scalars(select(SubscriptionTier).order_by(SubscriptionTier.monthly_price.desc())).all()
+    configs = db.scalars(select(AppConfig).order_by(AppConfig.key.asc()).limit(8)).all()
+    return templates.TemplateResponse(
+        "site_management.html",
+        {
+            "request": request,
+            "user": current_user,
+            "tier_count": tier_count,
+            "config_count": config_count,
+            "active_users": active_users,
+            "subscription_tiers": subscription_tiers,
+            "configs": configs,
         },
     )
 

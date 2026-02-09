@@ -3,7 +3,8 @@
 Enterprise-grade browser platform for programme/project management, resource planning, timesheets, leave workflows, and financial visibility.
 
 ## Major Feature Log
-1. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
+1. **Role-aware operations hubs + sidebar navigation** (branch: current working branch) – Added context-aware sidebar and dedicated pages for timesheets, leave, projects, programmes, company, and site management.
+2. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
 
 ## Feature Status Roadmap
 ### User-Facing
@@ -17,6 +18,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - [x] Sick leave recording
 - [x] Cost/bill rate configuration per user for P&L inputs
 - [x] Admin/profile menu UX placeholders with learning zone/my details/subscription options
+- [x] Role-aware sidebar and operational pages for timesheets, leave, projects, programmes, company, and site management
 - [ ] Rich drag-drop planning UI and Gantt visualizations
 - [ ] Email/Slack notifications for approvals and project alerts
 

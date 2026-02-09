@@ -1,0 +1,108 @@
+<!--
+Mini-README: Leave request system page for submitting, tracking, and approving annual leave.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Leave Requests</h1>
+  <p class="instruction">Track annual leave balances, submit requests, and manage approvals securely.</p>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Your requests</h3>
+      <p>{{ my_requests }}</p>
+    </article>
+    <article class="card">
+      <h3>Pending approvals</h3>
+      <p>{{ my_pending }}</p>
+    </article>
+    <article class="card">
+      <h3>Entitlement</h3>
+      <p>{{ user.leave_entitlement_days }} days</p>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>Submit leave request</h2>
+    <p class="helper">Requests are routed to admins for review and auditing.</p>
+    <form class="form" method="post" action="/leave-requests/form">
+      <div class="form-grid">
+        <div>
+          <label for="start_date">Start date</label>
+          <input id="start_date" name="start_date" type="date" required />
+        </div>
+        <div>
+          <label for="end_date">End date</label>
+          <input id="end_date" name="end_date" type="date" required />
+        </div>
+      </div>
+      <div>
+        <label for="reason">Reason / notes</label>
+        <textarea id="reason" name="reason" placeholder="Add context for your manager..." required></textarea>
+      </div>
+      <button class="btn" type="submit">Send leave request</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Your recent requests</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Start</th>
+          <th>End</th>
+          <th>Status</th>
+          <th>Reason</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave in recent_leave %}
+        <tr>
+          <td>{{ leave.start_date }}</td>
+          <td>{{ leave.end_date }}</td>
+          <td><span class="pill">{{ leave.status.value }}</span></td>
+          <td>{{ leave.reason }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="instruction">No leave records yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if user.role == 'admin' %}
+  <div class="panel">
+    <h2>Pending approvals (admin)</h2>
+    <p class="helper">Approve or reject requests in the admin workflow using the secure API action.</p>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Employee</th>
+          <th>Dates</th>
+          <th>Reason</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for leave in pending_approvals %}
+        <tr>
+          <td>{{ leave.user.full_name if leave.user else 'User #' ~ leave.user_id }}</td>
+          <td>{{ leave.start_date }} → {{ leave.end_date }}</td>
+          <td>{{ leave.reason }}</td>
+          <td>
+            <span class="pill">Use /leave-requests/{{ leave.id }}/decision</span>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="instruction">No pending approvals right now.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

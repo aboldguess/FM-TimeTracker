@@ -1,0 +1,91 @@
+<!--
+Mini-README: Project delivery hub with portfolio metrics, recent activity, and creation workflow.
+-->
+{% extends 'base.html' %}
+{% block content %}
+<section>
+  <h1>Projects</h1>
+  <p class="instruction">Centralise delivery plans, budgets, and milestones for every active project.</p>
+
+  <div class="card-grid">
+    <article class="card">
+      <h3>Total projects</h3>
+      <p>{{ total_projects }}</p>
+    </article>
+    <article class="card">
+      <h3>Active projects</h3>
+      <p>{{ active_projects }}</p>
+    </article>
+    <article class="card">
+      <h3>Governance focus</h3>
+      <p>Use work packages, tasks, and resource requirements to stay on track.</p>
+    </article>
+  </div>
+
+  <div class="panel">
+    <h2>Create new project</h2>
+    <p class="helper">Available to admins, programme managers, and project managers.</p>
+    <form class="form" method="post" action="/projects/form">
+      <div class="form-grid">
+        <div>
+          <label for="name">Project name</label>
+          <input id="name" name="name" type="text" placeholder="Project Atlas" required />
+        </div>
+        <div>
+          <label for="programme_id">Programme ID (optional)</label>
+          <input id="programme_id" name="programme_id" type="number" />
+        </div>
+        <div>
+          <label for="manager_id">Manager ID (optional)</label>
+          <input id="manager_id" name="manager_id" type="number" />
+        </div>
+        <div>
+          <label for="planned_hours">Planned hours</label>
+          <input id="planned_hours" name="planned_hours" type="number" step="0.5" min="0" />
+        </div>
+        <div>
+          <label for="planned_material_budget">Material budget</label>
+          <input id="planned_material_budget" name="planned_material_budget" type="number" step="0.01" min="0" />
+        </div>
+        <div>
+          <label for="planned_subcontract_budget">Subcontract budget</label>
+          <input id="planned_subcontract_budget" name="planned_subcontract_budget" type="number" step="0.01" min="0" />
+        </div>
+      </div>
+      <div>
+        <label for="description">Project brief</label>
+        <textarea id="description" name="description" placeholder="Describe scope, risks, and objectives" required></textarea>
+      </div>
+      <button class="btn" type="submit">Create project</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Recent projects</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Progress</th>
+          <th>Planned hours</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in recent_projects %}
+        <tr>
+          <td>{{ project.name }}</td>
+          <td><span class="pill">{{ project.status }}</span></td>
+          <td>{{ project.progress_percent }}%</td>
+          <td>{{ project.planned_hours }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="instruction">No projects created yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
