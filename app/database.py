@@ -100,33 +100,40 @@ def ensure_sqlite_schema(db_engine: Engine) -> None:
         return
 
     inspector = inspect(db_engine)
-    table_name = "timesheet_entries"
-    if table_name not in inspector.get_table_names():
-        logger.debug("SQLite schema check skipped: table '%s' not found.", table_name)
-        return
+    table_names = set(inspector.get_table_names())
 
-    column_names = {column["name"] for column in inspector.get_columns(table_name)}
-    alter_statements: list[tuple[str, str]] = []
-
-    if "created_at" not in column_names:
-        alter_statements.append(
+    # NOTE: keep this list intentionally additive-only and SQLite-compatible.
+    # SQLite supports adding nullable columns safely with ALTER TABLE, which is
+    # enough for our local legacy-db recovery path.
+    sqlite_legacy_alter_statements: dict[str, list[tuple[str, str]]] = {
+        "timesheet_entries": [
             (
                 "created_at",
-                f"ALTER TABLE {table_name} ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
-            )
-        )
-    if "updated_at" not in column_names:
-        alter_statements.append(("updated_at", f"ALTER TABLE {table_name} ADD COLUMN updated_at DATETIME"))
-
-    if not alter_statements:
-        return
+                "ALTER TABLE timesheet_entries "
+                "ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP",
+            ),
+            ("updated_at", "ALTER TABLE timesheet_entries ADD COLUMN updated_at DATETIME"),
+        ],
+        "projects": [
+            ("customer_id", "ALTER TABLE projects ADD COLUMN customer_id INTEGER"),
+            ("programme_id", "ALTER TABLE projects ADD COLUMN programme_id INTEGER"),
+        ],
+    }
 
     with db_engine.begin() as connection:
-        for column_name, statement in alter_statements:
-            logger.warning(
-                "Applying SQLite dev schema safety net: adding column '%s.%s'.",
-                table_name,
-                column_name,
-            )
-            connection.exec_driver_sql(statement)
-            logger.info("Applied SQLite schema change: table=%s column=%s", table_name, column_name)
+        for table_name, statements in sqlite_legacy_alter_statements.items():
+            if table_name not in table_names:
+                logger.debug("SQLite schema check skipped: table '%s' not found.", table_name)
+                continue
+
+            column_names = {column["name"] for column in inspector.get_columns(table_name)}
+            for column_name, statement in statements:
+                if column_name in column_names:
+                    continue
+                logger.warning(
+                    "Applying SQLite dev schema safety net: adding column '%s.%s'.",
+                    table_name,
+                    column_name,
+                )
+                connection.exec_driver_sql(statement)
+                logger.info("Applied SQLite schema change: table=%s column=%s", table_name, column_name)
