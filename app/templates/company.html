@@ -106,6 +106,30 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     </table>
   </div>
 
+  {% if user.role in ['admin', 'programme_manager'] %}
+  <div class="panel">
+    <h2>Reset user password</h2>
+    <p class="helper">Set a temporary password for a managed user. They will be forced to change it on next login.</p>
+    <form class="form" method="post" action="/company/users/reset-password">
+      <div class="form-grid">
+        <div>
+          <label for="reset_user_id">User</label>
+          <select id="reset_user_id" name="user_id" required>
+            {% for member in manageable_password_reset_users %}
+            <option value="{{ member.id }}">{{ member.full_name }} ({{ member.role.value }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="temporary_password">Temporary password</label>
+          <input id="temporary_password" name="temporary_password" type="password" minlength="10" required />
+        </div>
+      </div>
+      <button class="btn secondary" type="submit">Reset password</button>
+    </form>
+  </div>
+  {% endif %}
+
   {% if user.role == 'admin' %}
   <div class="panel">
     <h2>Create user</h2>

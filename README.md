@@ -7,6 +7,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 2. **Role-aware operations hubs + sidebar navigation** (branch: current working branch) – Added context-aware sidebar and dedicated pages for timesheets, leave, projects, programmes, company, and site management.
 3. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
 4. **Timesheet governance + customer management foundations** (branch: current working branch) – Added timesheet weekly submission/approval workflow, audit trails, line management, working-hours defaults, and customer CRUD to improve compliance and data quality.
+5. **Temporary password resets with enforced first-login change** (branch: current working branch) – Added admin/programme-manager temporary password reset controls and mandatory password update flow before protected pages are accessible.
 
 ## Feature Status Roadmap
 ### User-Facing
@@ -23,6 +24,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - [x] Role-aware sidebar and operational pages for timesheets, leave, projects, programmes, company, and site management
 - [x] Customer directory with CRUD and project-customer linking
 - [x] Timesheet weekly submissions, approvals, and audit trail visibility
+- [x] Temporary password reset and forced password update on next login
 - [ ] Rich drag-drop planning UI and Gantt visualizations
 - [ ] Email/Slack notifications for approvals and project alerts
 
