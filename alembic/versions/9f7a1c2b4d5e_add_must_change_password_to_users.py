@@ -25,7 +25,10 @@ def upgrade() -> None:
     existing_columns = {column["name"] for column in inspector.get_columns("users")}
     if "must_change_password" not in existing_columns:
         op.add_column("users", sa.Column("must_change_password", sa.Boolean(), nullable=False, server_default=sa.false()))
-        op.alter_column("users", "must_change_password", server_default=None)
+        # SQLite does not support `ALTER COLUMN ... DROP DEFAULT`, so only run
+        # this cleanup on dialects that support altering column defaults.
+        if bind.dialect.name != "sqlite":
+            op.alter_column("users", "must_change_password", server_default=None)
 
 
 def downgrade() -> None:
