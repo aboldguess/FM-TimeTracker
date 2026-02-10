@@ -174,6 +174,7 @@ curl -X POST http://localhost:8000/timesheets \
 
 - New environment setup: run `alembic upgrade head` once after installing dependencies and configuring `.env`.
 - Existing environment upgrades: run `alembic upgrade head` after pulling code updates.
+- App startup also runs migrations and auto-stamps legacy pre-Alembic schemas to the baseline revision before upgrading.
 - To inspect migration history: `alembic history`.
 - To inspect the current DB revision: `alembic current`.
 
