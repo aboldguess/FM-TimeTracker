@@ -16,7 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
-from app.database import Base, engine, ensure_sqlite_schema, get_db
+from app.database import engine, get_db, run_migrations
 from app.dependencies import can_manage_target, get_current_user, require_roles
 from app.models import (
     AppConfig,
@@ -184,8 +184,7 @@ def bootstrap_context(db: Session) -> dict[str, object]:
 
 @app.on_event("startup")
 def startup() -> None:
-    Base.metadata.create_all(bind=engine)
-    ensure_sqlite_schema()
+    run_migrations()
     stripe.api_key = settings.stripe_secret_key
     ensure_password_backend()
     with Session(engine) as db:

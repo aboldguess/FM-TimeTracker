@@ -1,21 +1,26 @@
 """Database module.
 
-Provides SQLAlchemy engine/session setup, schema helpers, and dependency
-utilities. The app is configured to use SQLite by default for easy local
-testing but accepts any SQLAlchemy-compatible DB URL for deployment.
+Provides SQLAlchemy engine/session setup and migration bootstrap helpers so
+schema changes are explicit, reproducible, and safe across environments.
 """
 
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
-from sqlalchemy import create_engine
-from sqlalchemy import inspect, text
+from alembic import command
+from alembic.config import Config
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
+
+# First Alembic revision that captures the existing pre-migration schema.
+BASELINE_REVISION = "17ed833d2e37"
 
 
 class Base(DeclarativeBase):
@@ -36,32 +41,49 @@ def get_db():
         db.close()
 
 
-def ensure_sqlite_schema() -> None:
-    """Apply lightweight SQLite schema fixes for legacy databases.
+def _has_existing_app_schema(db_engine: Engine) -> bool:
+    """Return True when pre-existing app tables are present in the database."""
+    inspector = inspect(db_engine)
+    existing_tables = set(inspector.get_table_names())
+    # Keep this list small and stable; these tables have existed across app versions.
+    sentinel_tables = {"users", "timesheet_entries", "projects"}
+    return any(table in existing_tables for table in sentinel_tables)
 
-    SQLite doesn't support ALTER TABLE ... ADD CONSTRAINT in-place, so we only
-    add missing columns with sane defaults and log any change for debugging.
+
+def _has_alembic_version(db_engine: Engine) -> bool:
+    """Return True when Alembic has already tracked this database."""
+    inspector = inspect(db_engine)
+    if "alembic_version" not in inspector.get_table_names():
+        return False
+    with db_engine.connect() as connection:
+        row = connection.exec_driver_sql("SELECT version_num FROM alembic_version LIMIT 1").first()
+    return row is not None and bool(row[0])
+
+
+def _bootstrap_legacy_schema_if_required(alembic_cfg: Config, db_engine: Engine) -> None:
+    """Stamp legacy pre-Alembic databases to baseline before upgrade.
+
+    Without this, old environments with existing tables but no `alembic_version`
+    would try to execute baseline CREATE TABLE DDL and fail at startup.
     """
-    if not settings.database_url.startswith("sqlite"):
+    if _has_alembic_version(db_engine):
         return
-    inspector = inspect(engine)
-    if "users" not in inspector.get_table_names():
+    if not _has_existing_app_schema(db_engine):
         return
-    existing_columns = {column["name"] for column in inspector.get_columns("users")}
-    column_fixes = [
-        ("manager_id", "INTEGER"),
-        ("working_hours_mon", "REAL NOT NULL DEFAULT 8"),
-        ("working_hours_tue", "REAL NOT NULL DEFAULT 8"),
-        ("working_hours_wed", "REAL NOT NULL DEFAULT 8"),
-        ("working_hours_thu", "REAL NOT NULL DEFAULT 8"),
-        ("working_hours_fri", "REAL NOT NULL DEFAULT 8"),
-        ("working_hours_sat", "REAL NOT NULL DEFAULT 0"),
-        ("working_hours_sun", "REAL NOT NULL DEFAULT 0"),
-    ]
-    with engine.begin() as connection:
-        for column_name, ddl in column_fixes:
-            if column_name in existing_columns:
-                continue
-            logger.info("Applying SQLite schema fix: users.%s", column_name)
-            connection.execute(text(f"ALTER TABLE users ADD COLUMN {column_name} {ddl}"))
-            existing_columns.add(column_name)
+
+    logger.warning(
+        "Detected legacy schema without alembic_version; stamping revision %s before upgrade.",
+        BASELINE_REVISION,
+    )
+    command.stamp(alembic_cfg, BASELINE_REVISION)
+
+
+def run_migrations() -> None:
+    """Apply migrations, auto-bootstrapping legacy non-Alembic databases."""
+    alembic_ini_path = Path(__file__).resolve().parent.parent / "alembic.ini"
+    alembic_cfg = Config(str(alembic_ini_path))
+    alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+
+    _bootstrap_legacy_schema_if_required(alembic_cfg, engine)
+    command.upgrade(alembic_cfg, "head")
+    logger.info("Database migrations applied successfully")
