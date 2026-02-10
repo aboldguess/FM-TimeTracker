@@ -12,6 +12,7 @@ from app.database import (
     _bootstrap_legacy_schema_if_required,
     _has_alembic_version,
     _has_existing_app_schema,
+    ensure_sqlite_schema,
 )
 
 
@@ -75,3 +76,24 @@ def test_does_not_stamp_when_alembic_version_exists(monkeypatch) -> None:
 
     assert _has_alembic_version(engine) is True
     assert stamped == []
+
+
+def test_sqlite_safety_net_backfills_missing_projects_columns() -> None:
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                "CREATE TABLE projects "
+                "(id INTEGER PRIMARY KEY, name VARCHAR(140) NOT NULL, description TEXT NOT NULL)"
+            )
+        )
+
+    ensure_sqlite_schema(engine)
+
+    with engine.begin() as connection:
+        columns = {
+            row[1] for row in connection.execute(text("PRAGMA table_info(projects)")).fetchall()
+        }
+
+    assert "customer_id" in columns
+    assert "programme_id" in columns
