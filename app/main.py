@@ -71,6 +71,44 @@ def parse_optional_float(raw_value: str | None, *, field_label: str) -> float | 
         raise HTTPException(status_code=400, detail=f"Enter a valid number for {field_label}.") from exc
 
 
+def parse_task_names(raw_value: str | None) -> list[str]:
+    """Parse newline-delimited task names, dropping blanks and duplicates safely."""
+    if raw_value is None:
+        return []
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for line in raw_value.splitlines():
+        task_name = line.strip()
+        if not task_name:
+            continue
+        if len(task_name) > 120:
+            raise HTTPException(status_code=400, detail="Task names must be 120 characters or fewer.")
+        normalized = task_name.casefold()
+        if normalized in seen:
+            continue
+        seen.add(normalized)
+        cleaned.append(task_name)
+    return cleaned
+
+
+def first_or_create_default_work_package(project: Project, db: Session) -> WorkPackage:
+    """Return project's first work package, creating a default one when missing."""
+    existing_package = db.scalar(
+        select(WorkPackage).where(WorkPackage.project_id == project.id).order_by(WorkPackage.id.asc())
+    )
+    if existing_package:
+        return existing_package
+
+    package = WorkPackage(
+        project_id=project.id,
+        name="General delivery",
+        description="Default work package created automatically for project-level task management.",
+    )
+    db.add(package)
+    db.flush()
+    return package
+
+
 def week_bounds(target_date: date) -> tuple[date, date]:
     """Return Monday-Sunday bounds for the week containing the target date."""
     week_start = target_date - timedelta(days=target_date.weekday())
@@ -653,7 +691,12 @@ def request_leave_form(
 def projects(request: Request, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     total_projects = db.scalar(select(func.count(Project.id))) or 0
     active_projects = db.scalar(select(func.count(Project.id)).where(Project.status != "completed")) or 0
-    recent_projects = db.scalars(select(Project).order_by(Project.id.desc()).limit(6)).all()
+    recent_projects = db.scalars(
+        select(Project)
+        .options(selectinload(Project.work_packages).selectinload(WorkPackage.tasks), selectinload(Project.customer))
+        .order_by(Project.id.desc())
+        .limit(6)
+    ).all()
     programmes = db.scalars(select(Programme).order_by(Programme.name.asc())).all()
     managers = db.scalars(select(User).order_by(User.full_name.asc())).all()
     customers = db.scalars(select(Customer).order_by(Customer.name.asc())).all()
@@ -683,6 +726,7 @@ def create_project_form(
     planned_hours: str | None = Form("0"),
     planned_material_budget: str | None = Form("0"),
     planned_subcontract_budget: str | None = Form("0"),
+    initial_tasks: str | None = Form(""),
     actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER, Role.PROJECT_MANAGER)),
     db: Session = Depends(get_db),
 ):
@@ -700,6 +744,97 @@ def create_project_form(
         planned_subcontract_budget=parse_optional_float(planned_subcontract_budget, field_label="subcontract budget") or 0,
     )
     db.add(project)
+    db.flush()
+
+    task_names = parse_task_names(initial_tasks)
+    if task_names:
+        default_package = first_or_create_default_work_package(project, db)
+        for task_name in task_names:
+            db.add(
+                Task(
+                    work_package_id=default_package.id,
+                    name=task_name,
+                    description="",
+                )
+            )
+
+    db.commit()
+    return RedirectResponse("/projects", status_code=303)
+
+
+@app.post("/projects/{project_id}/tasks/form")
+def create_project_task_form(
+    project_id: int,
+    name: str = Form(...),
+    description: str = Form(""),
+    planned_hours: str | None = Form("0"),
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER, Role.PROJECT_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    project = db.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found.")
+    work_package = first_or_create_default_work_package(project, db)
+    cleaned_name = name.strip()
+    if not cleaned_name:
+        raise HTTPException(status_code=400, detail="Task name is required.")
+    task = Task(
+        work_package_id=work_package.id,
+        name=cleaned_name,
+        description=description,
+        planned_hours=parse_optional_float(planned_hours, field_label="planned hours") or 0,
+    )
+    db.add(task)
+    db.commit()
+    return RedirectResponse("/projects", status_code=303)
+
+
+@app.post("/projects/{project_id}/tasks/{task_id}/update")
+def update_project_task_form(
+    project_id: int,
+    task_id: int,
+    name: str = Form(...),
+    description: str = Form(""),
+    planned_hours: str | None = Form("0"),
+    progress_percent: str | None = Form("0"),
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER, Role.PROJECT_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    task = db.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found.")
+    if task.work_package.project_id != project_id:
+        raise HTTPException(status_code=400, detail="Task does not belong to this project.")
+
+    cleaned_name = name.strip()
+    if not cleaned_name:
+        raise HTTPException(status_code=400, detail="Task name is required.")
+
+    parsed_progress = parse_optional_float(progress_percent, field_label="progress") or 0
+    if parsed_progress < 0 or parsed_progress > 100:
+        raise HTTPException(status_code=400, detail="Progress must be between 0 and 100.")
+
+    task.name = cleaned_name
+    task.description = description
+    task.planned_hours = parse_optional_float(planned_hours, field_label="planned hours") or 0
+    task.progress_percent = parsed_progress
+    db.commit()
+    return RedirectResponse("/projects", status_code=303)
+
+
+@app.post("/projects/{project_id}/tasks/{task_id}/delete")
+def delete_project_task_form(
+    project_id: int,
+    task_id: int,
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER, Role.PROJECT_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    task = db.get(Task, task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found.")
+    if task.work_package.project_id != project_id:
+        raise HTTPException(status_code=400, detail="Task does not belong to this project.")
+    db.delete(task)
     db.commit()
     return RedirectResponse("/projects", status_code=303)
 

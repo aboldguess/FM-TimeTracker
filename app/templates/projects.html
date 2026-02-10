@@ -75,6 +75,11 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
         <label for="description">Project brief</label>
         <textarea id="description" name="description" placeholder="Describe scope, risks, and objectives" required></textarea>
       </div>
+      <div>
+        <label for="initial_tasks">Initial tasks (optional)</label>
+        <textarea id="initial_tasks" name="initial_tasks" placeholder="One task name per line, e.g.&#10;Requirements workshop&#10;Draft delivery plan"></textarea>
+        <p class="helper">Project and programme managers can seed tasks now and refine them later below.</p>
+      </div>
       <button class="btn" type="submit">Create project</button>
     </form>
   </div>
@@ -89,6 +94,7 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
           <th>Status</th>
           <th>Progress</th>
           <th>Planned hours</th>
+          <th>Task controls</th>
         </tr>
       </thead>
       <tbody>
@@ -99,10 +105,71 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
           <td><span class="pill">{{ project.status }}</span></td>
           <td>{{ project.progress_percent }}%</td>
           <td>{{ project.planned_hours }}</td>
+          <td>
+            <details>
+              <summary>Manage tasks</summary>
+              <div class="panel" style="margin-top: 0.75rem;">
+                <h3>Add task</h3>
+                <form class="form" method="post" action="/projects/{{ project.id }}/tasks/form">
+                  <div class="form-grid">
+                    <div>
+                      <label for="task_name_{{ project.id }}">Task name</label>
+                      <input id="task_name_{{ project.id }}" name="name" type="text" required />
+                    </div>
+                    <div>
+                      <label for="task_hours_{{ project.id }}">Planned hours</label>
+                      <input id="task_hours_{{ project.id }}" name="planned_hours" type="number" step="0.5" min="0" />
+                    </div>
+                  </div>
+                  <div>
+                    <label for="task_description_{{ project.id }}">Description</label>
+                    <textarea id="task_description_{{ project.id }}" name="description" placeholder="Optional delivery notes"></textarea>
+                  </div>
+                  <button class="btn" type="submit">Add task</button>
+                </form>
+
+                <h3 style="margin-top: 1rem;">Existing tasks</h3>
+                {% set namespace = namespace(tasks=[]) %}
+                {% for work_package in project.work_packages %}
+                  {% for task in work_package.tasks %}
+                    {% set namespace.tasks = namespace.tasks + [task] %}
+                  {% endfor %}
+                {% endfor %}
+                {% for task in namespace.tasks %}
+                  <form class="form" method="post" action="/projects/{{ project.id }}/tasks/{{ task.id }}/update" style="border-top: 1px solid var(--line); padding-top: 0.8rem; margin-top: 0.8rem;">
+                    <div class="form-grid">
+                      <div>
+                        <label for="existing_task_name_{{ task.id }}">Task name</label>
+                        <input id="existing_task_name_{{ task.id }}" name="name" type="text" value="{{ task.name }}" required />
+                      </div>
+                      <div>
+                        <label for="existing_task_hours_{{ task.id }}">Planned hours</label>
+                        <input id="existing_task_hours_{{ task.id }}" name="planned_hours" type="number" step="0.5" min="0" value="{{ task.planned_hours }}" />
+                      </div>
+                      <div>
+                        <label for="existing_task_progress_{{ task.id }}">Progress %</label>
+                        <input id="existing_task_progress_{{ task.id }}" name="progress_percent" type="number" step="1" min="0" max="100" value="{{ task.progress_percent }}" />
+                      </div>
+                    </div>
+                    <div>
+                      <label for="existing_task_description_{{ task.id }}">Description</label>
+                      <textarea id="existing_task_description_{{ task.id }}" name="description">{{ task.description }}</textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                      <button class="btn" type="submit">Save</button>
+                      <button class="btn btn-secondary" formaction="/projects/{{ project.id }}/tasks/{{ task.id }}/delete" formmethod="post" onclick="return confirm('Delete this task?');">Delete</button>
+                    </div>
+                  </form>
+                {% else %}
+                  <p class="instruction">No tasks created yet for this project.</p>
+                {% endfor %}
+              </div>
+            </details>
+          </td>
         </tr>
         {% else %}
         <tr>
-          <td colspan="5" class="instruction">No projects created yet.</td>
+          <td colspan="6" class="instruction">No projects created yet.</td>
         </tr>
         {% endfor %}
       </tbody>
