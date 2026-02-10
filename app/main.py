@@ -38,11 +38,22 @@ from app.models import (
     WorkPackage,
 )
 from app.schemas import LeaveCreate, LoginRequest, ProjectCreate, SickLeaveCreate, TimesheetCreate, UserCreate, UserUpdate
-from app.security import create_session_token, ensure_password_backend, hash_password, verify_password
+from app.security import create_session_token, ensure_password_backend, hash_password, read_session_token, verify_password
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+def can_reset_password(actor: User, target: User) -> bool:
+    """Return whether the actor is allowed to set a temporary password for target user."""
+    if actor.id == target.id:
+        return True
+    if actor.role == Role.ADMIN:
+        return True
+    if actor.role == Role.PROGRAMME_MANAGER:
+        return target.role in {Role.PROJECT_MANAGER, Role.STAFF}
+    return False
 
 
 def parse_optional_int(raw_value: str | None) -> int | None:
@@ -220,6 +231,26 @@ def bootstrap_context(db: Session) -> dict[str, object]:
     }
 
 
+@app.middleware("http")
+async def enforce_password_change(request: Request, call_next):
+    """Redirect authenticated users with temporary passwords to the mandatory password change page."""
+    path = request.url.path
+    exempt_paths = {"/login", "/logout", "/force-password-change"}
+    if path.startswith("/static") or path in exempt_paths:
+        return await call_next(request)
+
+    session_token = request.cookies.get("session_token")
+    if session_token:
+        user_id = read_session_token(session_token)
+        if user_id:
+            with Session(engine) as db:
+                user = db.get(User, user_id)
+                if user and user.active and user.must_change_password:
+                    return RedirectResponse("/force-password-change", status_code=302)
+
+    return await call_next(request)
+
+
 @app.on_event("startup")
 def startup() -> None:
     run_migrations()
@@ -293,9 +324,65 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
             },
             status_code=401,
         )
-    response = RedirectResponse("/dashboard", status_code=302)
+    next_path = "/force-password-change" if user.must_change_password else "/dashboard"
+    response = RedirectResponse(next_path, status_code=302)
     response.set_cookie("session_token", create_session_token(user.id), httponly=True, secure=settings.secure_cookies, samesite="lax")
     return response
+
+
+@app.get("/force-password-change", response_class=HTMLResponse)
+def force_password_change_page(request: Request, current_user: User = Depends(get_current_user)):
+    return templates.TemplateResponse(
+        "force_password_change.html",
+        {
+            "request": request,
+            "user": current_user,
+            "error": None,
+        },
+    )
+
+
+@app.post("/force-password-change", response_class=HTMLResponse)
+def force_password_change(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not verify_password(current_password, current_user.hashed_password):
+        return templates.TemplateResponse(
+            "force_password_change.html",
+            {"request": request, "user": current_user, "error": "Current password is incorrect."},
+            status_code=400,
+        )
+    if len(new_password) < 10:
+        return templates.TemplateResponse(
+            "force_password_change.html",
+            {"request": request, "user": current_user, "error": "New password must be at least 10 characters."},
+            status_code=400,
+        )
+    if new_password != confirm_password:
+        return templates.TemplateResponse(
+            "force_password_change.html",
+            {"request": request, "user": current_user, "error": "New password and confirmation do not match."},
+            status_code=400,
+        )
+    if verify_password(new_password, current_user.hashed_password):
+        return templates.TemplateResponse(
+            "force_password_change.html",
+            {"request": request, "user": current_user, "error": "New password must differ from your current password."},
+            status_code=400,
+        )
+
+    user = db.get(User, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user.hashed_password = hash_password(new_password)
+    user.must_change_password = False
+    db.commit()
+    return RedirectResponse("/dashboard", status_code=303)
 
 
 @app.get("/logout")
@@ -924,6 +1011,7 @@ def company(request: Request, current_user: User = Depends(get_current_user), db
     config_count = db.scalar(select(func.count(AppConfig.id))) or 0
     recent_users = db.scalars(select(User).order_by(User.created_at.desc()).limit(6)).all()
     users = db.scalars(select(User).order_by(User.full_name.asc())).all()
+    manageable_password_reset_users = [member for member in users if can_reset_password(current_user, member)]
     defaults = default_working_hours(db)
     pending_timesheets_query = select(TimesheetWeekSummary).options(selectinload(TimesheetWeekSummary.user)).where(
         TimesheetWeekSummary.status.in_([TimesheetWeekStatus.SUBMITTED, TimesheetWeekStatus.APPROVED])
@@ -942,6 +1030,7 @@ def company(request: Request, current_user: User = Depends(get_current_user), db
             "config_count": config_count,
             "recent_users": recent_users,
             "users": users,
+            "manageable_password_reset_users": manageable_password_reset_users,
             "defaults": defaults,
             "pending_timesheets": pending_timesheets,
             "error": None,
@@ -972,6 +1061,7 @@ def create_company_user(
         email=email,
         full_name=full_name,
         hashed_password=hash_password(password),
+        must_change_password=True,
         role=role,
         manager_id=parse_optional_int(manager_id),
         leave_entitlement_days=parse_optional_float(leave_entitlement_days, field_label="leave entitlement") or 25,
@@ -1066,6 +1156,27 @@ def update_company_defaults(
     return RedirectResponse("/company", status_code=303)
 
 
+@app.post("/company/users/reset-password")
+def reset_company_user_password(
+    user_id: int = Form(...),
+    temporary_password: str = Form(...),
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    if len(temporary_password) < 10:
+        raise HTTPException(status_code=400, detail="Temporary password must be at least 10 characters.")
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if not can_reset_password(actor, user):
+        raise HTTPException(status_code=403, detail="You are not permitted to reset this user's password.")
+
+    user.hashed_password = hash_password(temporary_password)
+    user.must_change_password = True
+    db.commit()
+    return RedirectResponse("/company", status_code=303)
+
+
 @app.get("/site-management", response_class=HTMLResponse)
 def site_management(request: Request, current_user: User = Depends(require_roles(Role.ADMIN)), db: Session = Depends(get_db)):
     tier_count = db.scalar(select(func.count(SubscriptionTier.id))) or 0
@@ -1150,6 +1261,7 @@ def create_user(payload: UserCreate, actor: User = Depends(require_roles(Role.AD
         email=payload.email,
         full_name=payload.full_name,
         hashed_password=hash_password(payload.password),
+        must_change_password=True,
         role=payload.role,
         cost_rate=payload.cost_rate,
         bill_rate=payload.bill_rate,
@@ -1182,6 +1294,27 @@ def update_user(user_id: int, payload: UserUpdate, actor: User = Depends(require
     db.commit()
     db.refresh(user)
     return user
+
+
+@app.post("/users/{user_id}/reset-password")
+def reset_user_password(
+    user_id: int,
+    temporary_password: str = Form(...),
+    actor: User = Depends(require_roles(Role.ADMIN, Role.PROGRAMME_MANAGER)),
+    db: Session = Depends(get_db),
+):
+    if len(temporary_password) < 10:
+        raise HTTPException(status_code=400, detail="Temporary password must be at least 10 characters.")
+    user = db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not can_reset_password(actor, user):
+        raise HTTPException(status_code=403, detail="Insufficient permissions")
+
+    user.hashed_password = hash_password(temporary_password)
+    user.must_change_password = True
+    db.commit()
+    return {"status": "password_reset", "user_id": user.id}
 
 
 @app.delete("/users/{user_id}")
