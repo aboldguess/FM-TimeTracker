@@ -3,9 +3,10 @@
 Enterprise-grade browser platform for programme/project management, resource planning, timesheets, leave workflows, and financial visibility.
 
 ## Major Feature Log
-1. **Role-aware operations hubs + sidebar navigation** (branch: current working branch) – Added context-aware sidebar and dedicated pages for timesheets, leave, projects, programmes, company, and site management.
-2. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
-3. **Timesheet governance + customer management foundations** (branch: current working branch) – Added timesheet weekly submission/approval workflow, audit trails, line management, working-hours defaults, and customer CRUD to improve compliance and data quality.
+1. **Alembic migration workflow + timesheet timestamp migration** (branch: current working branch) – Added versioned DB migrations, a baseline schema revision, and a dedicated migration for `timesheet_entries.created_at` + `updated_at`.
+2. **Role-aware operations hubs + sidebar navigation** (branch: current working branch) – Added context-aware sidebar and dedicated pages for timesheets, leave, projects, programmes, company, and site management.
+3. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
+4. **Timesheet governance + customer management foundations** (branch: current working branch) – Added timesheet weekly submission/approval workflow, audit trails, line management, working-hours defaults, and customer CRUD to improve compliance and data quality.
 
 ## Feature Status Roadmap
 ### User-Facing
@@ -32,7 +33,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - [x] Local scripts and production-ready ASGI deployment path
 - [x] Pytest smoke tests
 - [ ] Full CI/CD pipeline (lint, test, security scans)
-- [ ] Postgres-first production migrations (Alembic)
+- [x] Postgres/SQLite migration workflow via Alembic
 - [x] Fine-grained audit log trail
 
 ---
@@ -125,7 +126,14 @@ STRIPE_SECRET_KEY=
 STRIPE_PUBLISHABLE_KEY=
 ```
 
-### 5) Run locally
+### 5) Run database migrations
+Run this for **new installs** and every **upgrade/pull** before starting the app.
+
+```bash
+alembic upgrade head
+```
+
+### 6) Run locally
 ```bash
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -160,6 +168,20 @@ curl -X POST http://localhost:8000/timesheets \
   -H "Cookie: session_token=<token>" \
   -d '{"entry_date":"2026-01-10","hours":7.5,"description":"Requirements workshop"}'
 ```
+
+
+## Database Migrations (New + Existing Environments)
+
+- New environment setup: run `alembic upgrade head` once after installing dependencies and configuring `.env`.
+- Existing environment upgrades: run `alembic upgrade head` after pulling code updates.
+- To inspect migration history: `alembic history`.
+- To inspect the current DB revision: `alembic current`.
+
+### Existing local SQLite databases
+If your existing local SQLite database was created before migrations were introduced:
+
+1. **Preferred path (preserve local data):** run `alembic upgrade head`.
+2. **Dev-only reset path (discard local data):** stop the app, delete `fm_timetracker.db`, then run `alembic upgrade head` to recreate schema from migrations.
 
 ## Deploying on Render.com
 1. Create a new Web Service linked to your Git repo.
