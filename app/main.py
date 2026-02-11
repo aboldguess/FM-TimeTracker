@@ -49,6 +49,7 @@ from app.models import (
 )
 from app.schemas import LeaveCreate, LoginRequest, ProjectCreate, SickLeaveCreate, TimesheetCreate, UserCreate, UserUpdate
 from app.security import create_session_token, ensure_password_backend, hash_password, read_session_token, verify_password
+from app.services_timesheets import apply_task_logged_hours_edit
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
@@ -616,9 +617,15 @@ def edit_timesheet_form(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    if hours <= 0 or hours > 24:
+        raise HTTPException(status_code=400, detail="Hours must be between 0 and 24")
+
     entry = db.get(TimesheetEntry, entry_id)
     if not entry or entry.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Timesheet entry not found.")
+
+    original_task_id = entry.task_id
+    original_hours = entry.hours
     original_week_start, _ = week_bounds(entry.entry_date)
     original_summary = db.scalar(
         select(TimesheetWeekSummary).where(
@@ -656,6 +663,16 @@ def edit_timesheet_form(
     if entry.task_id != parsed_task_id:
         changes.append(("task_id", str(entry.task_id or ""), str(parsed_task_id or "")))
         entry.task_id = parsed_task_id
+
+    old_task = db.get(Task, original_task_id) if original_task_id else None
+    new_task = db.get(Task, parsed_task_id) if parsed_task_id else None
+    apply_task_logged_hours_edit(
+        old_task=old_task,
+        new_task=new_task,
+        old_hours=original_hours,
+        new_hours=hours,
+    )
+
     entry.updated_at = datetime.utcnow()
     for field_name, old_value, new_value in changes:
         db.add(
