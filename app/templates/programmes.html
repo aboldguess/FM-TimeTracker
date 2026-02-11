@@ -2,8 +2,15 @@
 Mini-README: Programme management workspace with portfolio visibility and programme creation workflow.
 -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Programme sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#create-programme" class="context-pill">Create programme</a>
+  <a href="#recent-programmes" class="context-pill">Recent programmes</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>Programmes</h1>
   <p class="instruction">Coordinate multi-project initiatives and monitor outcomes across your portfolio.</p>
 
@@ -22,7 +29,7 @@ Mini-README: Programme management workspace with portfolio visibility and progra
     </article>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="create-programme">
     <h2>Create new programme</h2>
     <p class="helper">Admins and programme managers can create programme containers.</p>
     <form class="form" method="post" action="/programmes/form">
@@ -50,7 +57,7 @@ Mini-README: Programme management workspace with portfolio visibility and progra
     </form>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="recent-programmes">
     <h2>Recent programmes</h2>
     <table class="data-table">
       <thead>

@@ -2,8 +2,16 @@
 Mini-README: Timesheet operations hub for logging time, tracking totals, and auditing recent entries.
 -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Timesheet sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#log-time" class="context-pill">Log time</a>
+  <a href="#week-status" class="context-pill">Week status</a>
+  <a href="#recent-entries" class="context-pill">Recent entries</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>Timesheets</h1>
   <p class="instruction">Log work in real time, review recent entries, and keep project delivery transparent.</p>
 
@@ -32,7 +40,7 @@ Mini-README: Timesheet operations hub for logging time, tracking totals, and aud
     </article>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="log-time">
     <h2>Log new time</h2>
     <p class="helper">This form writes directly to the secure timesheet service. Use dropdowns to avoid data quality issues.</p>
     {% if error %}
@@ -76,7 +84,7 @@ Mini-README: Timesheet operations hub for logging time, tracking totals, and aud
     </form>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="week-status">
     <h2>Week status ({{ week_start }} → {{ week_end }})</h2>
     <p class="helper">Days are colour coded: missing, partially filled, or complete (including approved leave days).</p>
     <div class="status-legend">
@@ -121,7 +129,7 @@ Mini-README: Timesheet operations hub for logging time, tracking totals, and aud
     </div>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="recent-entries">
     <h2>Recent entries</h2>
     <table class="data-table">
       <thead>

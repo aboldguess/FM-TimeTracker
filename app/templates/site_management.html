@@ -2,8 +2,16 @@
 Mini-README: Admin-only site management console for subscriptions, configuration, and platform governance.
 -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Site management sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#subscription-tiers" class="context-pill">Subscription tiers</a>
+  <a href="#site-config" class="context-pill">Site config</a>
+  <a href="#checklist" class="context-pill">Checklist</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>Site Management</h1>
   <p class="instruction">Admin-only controls for billing, configuration, and operational readiness.</p>
 
@@ -22,7 +30,7 @@ Mini-README: Admin-only site management console for subscriptions, configuration
     </article>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="subscription-tiers">
     <h2>Subscription tiers</h2>
     <p class="helper">Create or update tiers before syncing Stripe pricing.</p>
     <form class="form" method="post" action="/subscription-tiers">
@@ -71,7 +79,7 @@ Mini-README: Admin-only site management console for subscriptions, configuration
     </table>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="site-config">
     <h2>Site configuration</h2>
     <p class="helper">Centralise platform settings for notifications, branding, and integrations.</p>
     <form class="form" method="post" action="/admin/site-config">
@@ -110,7 +118,7 @@ Mini-README: Admin-only site management console for subscriptions, configuration
     </table>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="checklist">
     <h2>Operational checklist</h2>
     <ul>
       <li>Sync Stripe keys and ensure webhook coverage.</li>

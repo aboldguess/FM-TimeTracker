@@ -2,8 +2,16 @@
 Mini-README: Company overview page providing org-level insights, policy checkpoints, and directory snapshots.
 -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Company sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#directory" class="context-pill">Directory</a>
+  <a href="#approvals" class="context-pill">Approvals</a>
+  <a href="#admin-controls" class="context-pill">Admin controls</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>Company</h1>
   <p class="instruction">Keep leadership, compliance, and subscription health transparent for every stakeholder.</p>
 
@@ -26,7 +34,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     </article>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="directory">
     <h2>Company directory snapshot</h2>
     <p class="helper">Admins can manage users directly here or via the Admin menu.</p>
     <table class="data-table">
@@ -59,7 +67,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     </table>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="approvals">
     <h2>Timesheet approvals</h2>
     <p class="helper">Line managers can approve submitted weeks with an optional note.</p>
     <table class="data-table">
@@ -134,7 +142,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
   {% endif %}
 
   {% if user.role == 'admin' %}
-  <div class="panel">
+  <div class="panel" id="admin-controls">
     <h2>Create user</h2>
     <p class="helper">Admins can add users and assign their line manager and working hours.</p>
     <form class="form" method="post" action="/company/users/create">

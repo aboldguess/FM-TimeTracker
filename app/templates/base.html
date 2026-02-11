@@ -72,6 +72,7 @@ Used by all pages to keep UX consistent and discoverable.
     </aside>
     {% endif %}
     <main class="container main-content">
+      {% block contextual_nav %}{% endblock %}
       {% block content %}{% endblock %}
     </main>
   </div>
