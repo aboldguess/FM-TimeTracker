@@ -1,21 +1,28 @@
 <!-- Mini-README: Login page with clear usage instructions and error handling. -->
 {% extends 'base.html' %}
 {% block content %}
-<section class="panel">
-  <h1>Secure Sign In</h1>
-  <p>Use your assigned work account. For new environments, set <code>BOOTSTRAP_ADMIN_PASSWORD</code> before first startup and rotate credentials immediately after first login.</p>
-  {% if show_bootstrap %}
-  <p class="instruction">Bootstrap email: <strong>{{ bootstrap_email }}</strong></p>
-  <p class="instruction">{{ bootstrap_onboarding_hint }}</p>
-  {% elif bootstrap_setup_required %}
-  <p class="instruction">Setup is required in this environment. {{ bootstrap_onboarding_hint }}</p>
-  {% endif %}
-  {% if error %}<p class="error">{{ error }}</p>{% endif %}
-  <form method="post" action="/login" class="form">
+<section class="login-layout">
+  <article class="panel">
+    <h1>Secure Sign In</h1>
+    <p>Use your assigned work account. For new environments, set <code>BOOTSTRAP_ADMIN_PASSWORD</code> before first startup and rotate credentials immediately after first login.</p>
+    {% if show_bootstrap %}
+    <p class="instruction">Bootstrap email: <strong>{{ bootstrap_email }}</strong></p>
+    <p class="instruction">{{ bootstrap_onboarding_hint }}</p>
+    {% elif bootstrap_setup_required %}
+    <p class="instruction">Setup is required in this environment. {{ bootstrap_onboarding_hint }}</p>
+    {% endif %}
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/login" class="form">
       {{ csrf_input(request) }}
-    <label>Email<input type="email" name="email" {% if show_bootstrap %}value="{{ bootstrap_email }}"{% endif %} placeholder="name@company.com" required></label>
-    <label>Password<input type="password" name="password" required></label>
-    <button type="submit" class="btn">Log In</button>
-  </form>
+      <label>Email<input type="email" name="email" {% if show_bootstrap %}value="{{ bootstrap_email }}"{% endif %} placeholder="name@company.com" required></label>
+      <label>Password<input type="password" name="password" required></label>
+      <button type="submit" class="btn">Log In</button>
+    </form>
+  </article>
+  <aside class="panel login-preview">
+    <h2>{{ splash_headline }}</h2>
+    <p>{{ splash_subheadline }}</p>
+    <img src="{{ splash_image_url }}" alt="{{ splash_image_alt }}" loading="lazy" />
+  </aside>
 </section>
 {% endblock %}

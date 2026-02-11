@@ -38,7 +38,7 @@ Used by all pages to keep UX consistent and discoverable.
       {% endif %}
     </div>
   </nav>
-  <div class="app-shell">
+  <div class="app-shell {% if not user %}app-shell--guest{% endif %}">
     {% if user %}
     <aside class="sidebar">
       <h2>Workspace</h2>
