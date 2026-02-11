@@ -1,0 +1,40 @@
+"""Mini-README: Regression tests for login parsing and guest splash layout behavior."""
+
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+
+client = TestClient(app)
+
+
+def _csrf_token() -> str:
+    """Fetch a CSRF token from the login page cookie jar."""
+    response = client.get("/login")
+    assert response.status_code == 200
+    token = client.cookies.get("csrf_token")
+    assert token
+    return token
+
+
+def test_login_json_payload_missing_fields_returns_validation_page_not_422() -> None:
+    """JSON login requests should render the same friendly validation messaging as form posts."""
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={},
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 400
+    assert "Enter a valid email address" in response.text
+    assert "Field required" not in response.text
+
+
+def test_landing_page_uses_full_width_splash_layout_for_guests() -> None:
+    """Guest users should get the full-width splash layout instead of sidebar-constrained content."""
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "app-shell--guest" in response.text
+    assert "splash-hero" in response.text

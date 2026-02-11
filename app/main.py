@@ -261,6 +261,29 @@ def bootstrap_context(db: Session) -> dict[str, object]:
     }
 
 
+def splash_content_context(db: Session) -> dict[str, str]:
+    """Load configurable landing splash content with sensible defaults."""
+    defaults: dict[str, str] = {
+        "splash_headline": "Enterprise Project & Programme Command Centre",
+        "splash_subheadline": "Secure role-based planning, delivery tracking, timesheets, leave, and live financial intelligence in one browser app.",
+        "splash_highlight_1_title": "Role-aware control",
+        "splash_highlight_1_body": "Admins, programme managers, project managers, and staff get tailored permissions and dashboards.",
+        "splash_highlight_2_title": "Plan vs Actual",
+        "splash_highlight_2_body": "Track work packages, tasks, resource budgets, and progress against targets.",
+        "splash_highlight_3_title": "People Ops built-in",
+        "splash_highlight_3_body": "Timesheets, annual leave approvals, and sick leave recording are first-class features.",
+        "splash_cta_label": "Enter platform",
+        "splash_image_url": "https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=1400&q=80",
+        "splash_image_alt": "Team reviewing project performance charts on a modern dashboard",
+    }
+    config_rows = db.scalars(select(AppConfig).where(AppConfig.key.in_(tuple(defaults.keys())))).all()
+    for row in config_rows:
+        cleaned_value = row.value.strip()
+        if cleaned_value:
+            defaults[row.key] = cleaned_value
+    return defaults
+
+
 @app.middleware("http")
 async def enforce_password_change(request: Request, call_next):
     """Redirect authenticated users with temporary passwords to the mandatory password change page."""
@@ -332,11 +355,13 @@ def startup() -> None:
 def landing(request: Request):
     with Session(engine) as db:
         bootstrap_details = bootstrap_context(db)
+        splash_content = splash_content_context(db)
     return templates.TemplateResponse(
         "landing.html",
         {
             "request": request,
             **bootstrap_details,
+            **splash_content,
         },
     )
 
@@ -345,18 +370,33 @@ def landing(request: Request):
 def login_page(request: Request):
     with Session(engine) as db:
         bootstrap_details = bootstrap_context(db)
+        splash_content = splash_content_context(db)
     return templates.TemplateResponse(
         "login.html",
         {
             "request": request,
             "error": None,
             **bootstrap_details,
+            **splash_content,
         },
     )
 
 
 @app.post("/login", response_class=HTMLResponse)
-def login(request: Request, email: str = Form(...), password: str = Form(...), db: Session = Depends(get_db)):
+async def login(request: Request, db: Session = Depends(get_db)):
+    """Authenticate users from either HTML form posts or JSON API payloads."""
+    email: str | None = None
+    password: str | None = None
+    content_type = request.headers.get("content-type", "").lower()
+    if "application/json" in content_type:
+        payload_data = await request.json()
+        email = payload_data.get("email") if isinstance(payload_data, dict) else None
+        password = payload_data.get("password") if isinstance(payload_data, dict) else None
+    else:
+        form_data = await request.form()
+        email = form_data.get("email")
+        password = form_data.get("password")
+
     try:
         payload = LoginRequest(email=email, password=password)
     except ValidationError:
@@ -366,6 +406,7 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
                 "request": request,
                 "error": f"Enter a valid email address (example: {settings.bootstrap_admin_email}).",
                 **bootstrap_context(db),
+                **splash_content_context(db),
             },
             status_code=400,
         )
@@ -377,6 +418,7 @@ def login(request: Request, email: str = Form(...), password: str = Form(...), d
                 "request": request,
                 "error": "Invalid credentials",
                 **bootstrap_context(db),
+                **splash_content_context(db),
             },
             status_code=401,
         )
@@ -1266,6 +1308,7 @@ def site_management(request: Request, current_user: User = Depends(require_roles
             "active_users": active_users,
             "subscription_tiers": subscription_tiers,
             "configs": configs,
+            "splash": splash_content_context(db),
         },
     )
 
@@ -1522,6 +1565,58 @@ def upsert_site_config(key: str = Form(...), value: str = Form(...), current_use
         db.add(AppConfig(key=key, value=value))
     db.commit()
     return {"ok": True}
+
+
+@app.post("/admin/site-config/splash")
+def upsert_splash_site_config(
+    splash_headline: str = Form(...),
+    splash_subheadline: str = Form(...),
+    splash_highlight_1_title: str = Form(...),
+    splash_highlight_1_body: str = Form(...),
+    splash_highlight_2_title: str = Form(...),
+    splash_highlight_2_body: str = Form(...),
+    splash_highlight_3_title: str = Form(...),
+    splash_highlight_3_body: str = Form(...),
+    splash_cta_label: str = Form(...),
+    splash_image_url: str = Form(...),
+    splash_image_alt: str = Form(...),
+    current_user: User = Depends(require_roles(Role.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Upsert all splash-screen branding keys in one admin operation."""
+    del current_user
+    payload = {
+        "splash_headline": splash_headline,
+        "splash_subheadline": splash_subheadline,
+        "splash_highlight_1_title": splash_highlight_1_title,
+        "splash_highlight_1_body": splash_highlight_1_body,
+        "splash_highlight_2_title": splash_highlight_2_title,
+        "splash_highlight_2_body": splash_highlight_2_body,
+        "splash_highlight_3_title": splash_highlight_3_title,
+        "splash_highlight_3_body": splash_highlight_3_body,
+        "splash_cta_label": splash_cta_label,
+        "splash_image_url": splash_image_url,
+        "splash_image_alt": splash_image_alt,
+    }
+    allowed_image_prefixes = ("https://", "http://", "/")
+    if not payload["splash_image_url"].startswith(allowed_image_prefixes):
+        raise HTTPException(
+            status_code=400,
+            detail="Splash image URL must start with https://, http://, or / for local static assets.",
+        )
+
+    for key, value in payload.items():
+        cleaned = value.strip()
+        if not cleaned:
+            raise HTTPException(status_code=400, detail=f"{key} cannot be empty.")
+        config = db.scalar(select(AppConfig).where(AppConfig.key == key))
+        if config:
+            config.value = cleaned
+        else:
+            db.add(AppConfig(key=key, value=cleaned))
+
+    db.commit()
+    return RedirectResponse("/site-management#site-config", status_code=303)
 
 
 @app.get("/health")

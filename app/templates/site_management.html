@@ -79,7 +79,67 @@ Mini-README: Admin-only site management console for subscriptions, configuration
     </table>
   </div>
 
+
   <div class="panel" id="site-config">
+    <h2>Splash screen configuration</h2>
+    <p class="helper">Configure all public splash-screen copy and hero image in one place.</p>
+    <form class="form" method="post" action="/admin/site-config/splash">
+      {{ csrf_input(request) }}
+      <div class="form-grid">
+        <div>
+          <label for="splash_headline">Headline</label>
+          <input id="splash_headline" name="splash_headline" type="text" value="{{ splash.splash_headline }}" required />
+        </div>
+        <div>
+          <label for="splash_cta_label">CTA label</label>
+          <input id="splash_cta_label" name="splash_cta_label" type="text" value="{{ splash.splash_cta_label }}" required />
+        </div>
+      </div>
+      <div>
+        <label for="splash_subheadline">Subheadline</label>
+        <textarea id="splash_subheadline" name="splash_subheadline" required>{{ splash.splash_subheadline }}</textarea>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label for="splash_highlight_1_title">Highlight 1 title</label>
+          <input id="splash_highlight_1_title" name="splash_highlight_1_title" type="text" value="{{ splash.splash_highlight_1_title }}" required />
+        </div>
+        <div>
+          <label for="splash_highlight_1_body">Highlight 1 body</label>
+          <textarea id="splash_highlight_1_body" name="splash_highlight_1_body" required>{{ splash.splash_highlight_1_body }}</textarea>
+        </div>
+        <div>
+          <label for="splash_highlight_2_title">Highlight 2 title</label>
+          <input id="splash_highlight_2_title" name="splash_highlight_2_title" type="text" value="{{ splash.splash_highlight_2_title }}" required />
+        </div>
+        <div>
+          <label for="splash_highlight_2_body">Highlight 2 body</label>
+          <textarea id="splash_highlight_2_body" name="splash_highlight_2_body" required>{{ splash.splash_highlight_2_body }}</textarea>
+        </div>
+        <div>
+          <label for="splash_highlight_3_title">Highlight 3 title</label>
+          <input id="splash_highlight_3_title" name="splash_highlight_3_title" type="text" value="{{ splash.splash_highlight_3_title }}" required />
+        </div>
+        <div>
+          <label for="splash_highlight_3_body">Highlight 3 body</label>
+          <textarea id="splash_highlight_3_body" name="splash_highlight_3_body" required>{{ splash.splash_highlight_3_body }}</textarea>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div>
+          <label for="splash_image_url">Splash image URL</label>
+          <input id="splash_image_url" name="splash_image_url" type="url" value="{{ splash.splash_image_url }}" required />
+        </div>
+        <div>
+          <label for="splash_image_alt">Splash image alt text</label>
+          <input id="splash_image_alt" name="splash_image_alt" type="text" value="{{ splash.splash_image_alt }}" required />
+        </div>
+      </div>
+      <button class="btn" type="submit">Save splash settings</button>
+    </form>
+  </div>
+
+  <div class="panel" id="site-config-generic">
     <h2>Site configuration</h2>
     <p class="helper">Centralise platform settings for notifications, branding, and integrations.</p>
     <form class="form" method="post" action="/admin/site-config">

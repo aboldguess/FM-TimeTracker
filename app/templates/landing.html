@@ -1,22 +1,28 @@
 <!-- Mini-README: Friendly landing splash page introducing capabilities and CTAs. -->
 {% extends 'base.html' %}
 {% block content %}
-<section class="hero">
-  <h1>Enterprise Project & Programme Command Centre</h1>
-  <p>Secure role-based planning, delivery tracking, timesheets, leave, and live financial intelligence in one browser app.</p>
-  <div class="card-grid">
-    <article class="card"><h3>Role-aware control</h3><p>Admins, programme managers, project managers, and staff get tailored permissions and dashboards.</p></article>
-    <article class="card"><h3>Plan vs Actual</h3><p>Track work packages, tasks, resource budgets, and progress against targets.</p></article>
-    <article class="card"><h3>People Ops built-in</h3><p>Timesheets, annual leave approvals, and sick leave recording are first-class features.</p></article>
+<section class="splash-hero">
+  <div class="splash-copy">
+    <p class="pill">FM TimeTracker</p>
+    <h1>{{ splash_headline }}</h1>
+    <p>{{ splash_subheadline }}</p>
+    <div class="card-grid splash-highlights">
+      <article class="card"><h3>{{ splash_highlight_1_title }}</h3><p>{{ splash_highlight_1_body }}</p></article>
+      <article class="card"><h3>{{ splash_highlight_2_title }}</h3><p>{{ splash_highlight_2_body }}</p></article>
+      <article class="card"><h3>{{ splash_highlight_3_title }}</h3><p>{{ splash_highlight_3_body }}</p></article>
+    </div>
+    {% if show_bootstrap %}
+    <p class="instruction">New installation setup required. Bootstrap email: <strong>{{ bootstrap_email }}</strong>.</p>
+    <p class="instruction">{{ bootstrap_onboarding_hint }}</p>
+    {% elif bootstrap_setup_required %}
+    <p class="instruction">Initial admin setup is required for this environment. {{ bootstrap_onboarding_hint }}</p>
+    {% else %}
+    <p class="instruction">An administrator account already exists. Use your assigned admin credentials or contact support to regain access.</p>
+    {% endif %}
+    <a href="/login" class="btn">{{ splash_cta_label }}</a>
   </div>
-  {% if show_bootstrap %}
-  <p class="instruction">New installation setup required. Bootstrap email: <strong>{{ bootstrap_email }}</strong>.</p>
-  <p class="instruction">{{ bootstrap_onboarding_hint }}</p>
-  {% elif bootstrap_setup_required %}
-  <p class="instruction">Initial admin setup is required for this environment. {{ bootstrap_onboarding_hint }}</p>
-  {% else %}
-  <p class="instruction">An administrator account already exists. Use your assigned admin credentials or contact support to regain access.</p>
-  {% endif %}
-  <a href="/login" class="btn">Enter platform</a>
+  <div class="splash-visual">
+    <img src="{{ splash_image_url }}" alt="{{ splash_image_alt }}" loading="lazy" />
+  </div>
 </section>
 {% endblock %}
