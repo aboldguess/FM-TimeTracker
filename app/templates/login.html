@@ -3,9 +3,12 @@
 {% block content %}
 <section class="panel">
   <h1>Secure Sign In</h1>
-  <p>Use your assigned work account. For new environments use the bootstrap admin credentials shown on the landing page, then update your email, password, and profile details immediately.</p>
+  <p>Use your assigned work account. For new environments, set <code>BOOTSTRAP_ADMIN_PASSWORD</code> before first startup and rotate credentials immediately after first login.</p>
   {% if show_bootstrap %}
-  <p class="instruction">Bootstrap access: <strong>{{ bootstrap_email }} / {{ bootstrap_password }}</strong></p>
+  <p class="instruction">Bootstrap email: <strong>{{ bootstrap_email }}</strong></p>
+  <p class="instruction">{{ bootstrap_onboarding_hint }}</p>
+  {% elif bootstrap_setup_required %}
+  <p class="instruction">Setup is required in this environment. {{ bootstrap_onboarding_hint }}</p>
   {% endif %}
   {% if error %}<p class="error">{{ error }}</p>{% endif %}
   <form method="post" action="/login" class="form">

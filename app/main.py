@@ -224,10 +224,18 @@ def bootstrap_context(db: Session) -> dict[str, object]:
     )
     # Only hide bootstrap guidance once a non-bootstrap admin is created.
     non_bootstrap_admins = max(admin_count - bootstrap_exists, 0)
+    setup_required = admin_count == 0 or non_bootstrap_admins == 0
+    is_non_production = settings.environment.lower() != "production"
+    show_bootstrap_hint = setup_required and (is_non_production or settings.secure_bootstrap_onboarding)
+    onboarding_hint = (
+        "Before first startup, set BOOTSTRAP_ADMIN_PASSWORD in your environment "
+        "and rotate bootstrap credentials immediately after first login."
+    )
     return {
-        "show_bootstrap": admin_count == 0 or non_bootstrap_admins == 0,
-        "bootstrap_email": settings.bootstrap_admin_email,
-        "bootstrap_password": settings.bootstrap_admin_password,
+        "show_bootstrap": show_bootstrap_hint,
+        "bootstrap_setup_required": setup_required,
+        "bootstrap_email": settings.bootstrap_admin_email if show_bootstrap_hint else None,
+        "bootstrap_onboarding_hint": onboarding_hint,
     }
 
 
