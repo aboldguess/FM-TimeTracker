@@ -82,6 +82,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
           <td>
             {% if summary.status.value == 'submitted' %}
             <form class="inline-form" method="post" action="/timesheets/approve-week">
+      {{ csrf_input(request) }}
               <input type="hidden" name="week_start" value="{{ summary.week_start }}" />
               <input type="hidden" name="user_id" value="{{ summary.user_id }}" />
               <input type="text" name="approval_note" placeholder="Optional approval note" />
@@ -89,6 +90,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
             </form>
             {% elif summary.status.value == 'approved' %}
             <form class="inline-form" method="post" action="/timesheets/unapprove-week">
+      {{ csrf_input(request) }}
               <input type="hidden" name="week_start" value="{{ summary.week_start }}" />
               <input type="hidden" name="user_id" value="{{ summary.user_id }}" />
               <input type="text" name="approval_note" placeholder="Optional rollback note" />
@@ -111,6 +113,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     <h2>Reset user password</h2>
     <p class="helper">Set a temporary password for a managed user. They will be forced to change it on next login.</p>
     <form class="form" method="post" action="/company/users/reset-password">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="reset_user_id">User</label>
@@ -135,6 +138,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     <h2>Create user</h2>
     <p class="helper">Admins can add users and assign their line manager and working hours.</p>
     <form class="form" method="post" action="/company/users/create">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="full_name">Full name</label>
@@ -209,6 +213,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     <h2>Update user settings</h2>
     <p class="helper">Update line management and working hour expectations for existing users.</p>
     <form class="form" method="post" action="/company/users/update">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="user_id">User</label>
@@ -270,6 +275,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     <h2>Update default working hours</h2>
     <p class="helper">Defaults apply to newly created users and can be overridden per employee.</p>
     <form class="form" method="post" action="/company/defaults">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="default_hours_mon">Mon default</label>
@@ -308,6 +314,7 @@ Mini-README: Company overview page providing org-level insights, policy checkpoi
     <h2>Deactivate or reactivate users</h2>
     <p class="helper">Use this to pause access for leavers or contractors.</p>
     <form class="form" method="post" action="/company/users/toggle-active">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="toggle_user_id">User</label>

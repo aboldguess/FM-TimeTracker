@@ -26,6 +26,7 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
     <h2>Submit leave request</h2>
     <p class="helper">Requests are routed to your line manager for review and auditing.</p>
     <form class="form" method="post" action="/leave-requests/form">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="start_date">Start date</label>
@@ -93,10 +94,12 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
           <td>{{ leave.reason }}</td>
           <td>
             <form class="inline-form" method="post" action="/leave-requests/{{ leave.id }}/decision">
+      {{ csrf_input(request) }}
               <input type="hidden" name="approve" value="true" />
               <button class="btn" type="submit">Approve</button>
             </form>
             <form class="inline-form" method="post" action="/leave-requests/{{ leave.id }}/decision">
+      {{ csrf_input(request) }}
               <input type="hidden" name="approve" value="false" />
               <button class="btn secondary" type="submit">Reject</button>
             </form>

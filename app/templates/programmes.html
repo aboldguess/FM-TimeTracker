@@ -26,6 +26,7 @@ Mini-README: Programme management workspace with portfolio visibility and progra
     <h2>Create new programme</h2>
     <p class="helper">Admins and programme managers can create programme containers.</p>
     <form class="form" method="post" action="/programmes/form">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="name">Programme name</label>
