@@ -39,6 +39,7 @@ Mini-README: Timesheet operations hub for logging time, tracking totals, and aud
     <p class="error">{{ error }}</p>
     {% endif %}
     <form class="form" method="post" action="/timesheets/form">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="entry_date">Entry date</label>
@@ -104,12 +105,14 @@ Mini-README: Timesheet operations hub for logging time, tracking totals, and aud
       <div class="panel-actions">
         {% if not week_summary or week_summary.status.value == 'draft' %}
         <form method="post" action="/timesheets/submit-week" class="inline-form">
+      {{ csrf_input(request) }}
           <input type="hidden" name="week_start" value="{{ week_start }}" />
           <input type="text" name="submit_note" placeholder="Optional note to line manager" />
           <button class="btn" type="submit">Submit week</button>
         </form>
         {% elif week_summary.status.value == 'submitted' %}
         <form method="post" action="/timesheets/unsubmit-week" class="inline-form">
+      {{ csrf_input(request) }}
           <input type="hidden" name="week_start" value="{{ week_start }}" />
           <button class="btn secondary" type="submit">Unsubmit week</button>
         </form>
@@ -143,6 +146,7 @@ Mini-README: Timesheet operations hub for logging time, tracking totals, and aud
             <details>
               <summary>Edit</summary>
               <form class="form compact" method="post" action="/timesheets/{{ entry.id }}/edit">
+      {{ csrf_input(request) }}
                 <input type="date" name="entry_date" value="{{ entry.entry_date }}" required />
                 <input type="number" name="hours" step="0.25" min="0.25" max="24" value="{{ entry.hours }}" required />
                 <select name="project_id">

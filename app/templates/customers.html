@@ -22,6 +22,7 @@ Mini-README: Customer management hub for creating and reviewing client records.
     <h2>Add customer</h2>
     <p class="helper">Capture clean customer records to power project, programme, and billing dropdowns.</p>
     <form class="form" method="post" action="/customers/form">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="name">Customer name</label>
@@ -53,6 +54,7 @@ Mini-README: Customer management hub for creating and reviewing client records.
           <td>{{ customer.industry or '-' }}</td>
           <td>
             <form method="post" action="/customers/{{ customer.id }}/delete" onsubmit="return confirm('Delete this customer?');">
+      {{ csrf_input(request) }}
               <button class="btn secondary" type="submit">Delete</button>
             </form>
           </td>

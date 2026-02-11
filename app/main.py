@@ -8,14 +8,24 @@ from datetime import date, datetime, timedelta
 
 import stripe
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from markupsafe import Markup, escape
 from pydantic import ValidationError
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
+from app.csrf import (
+    CSRF_COOKIE_NAME,
+    CSRF_FORM_FIELD,
+    CSRF_HEADER_NAME,
+    get_or_create_csrf_token,
+    is_csrf_token_valid,
+    is_same_origin,
+    should_enforce_csrf,
+)
 from app.database import engine, get_db, run_migrations
 from app.dependencies import can_manage_target, get_current_user, require_roles
 from app.models import (
@@ -43,6 +53,17 @@ from app.security import create_session_token, ensure_password_backend, hash_pas
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+
+
+def csrf_hidden_input(request: Request) -> Markup:
+    """Render a hidden CSRF input for HTML forms in Jinja templates."""
+    token = get_or_create_csrf_token(request)
+    return Markup(
+        f'<input type="hidden" name="{CSRF_FORM_FIELD}" value="{escape(token)}" />'
+    )
+
+
+templates.env.globals["csrf_input"] = csrf_hidden_input
 
 
 def can_reset_password(actor: User, target: User) -> bool:
@@ -257,6 +278,32 @@ async def enforce_password_change(request: Request, call_next):
                     return RedirectResponse("/force-password-change", status_code=302)
 
     return await call_next(request)
+
+
+@app.middleware("http")
+async def csrf_protection(request: Request, call_next):
+    """Validate CSRF tokens for mutating routes and issue tokens per session."""
+    if should_enforce_csrf(request):
+        if not is_same_origin(request):
+            return JSONResponse(status_code=403, content={"detail": "Invalid request origin."})
+
+        submitted_token = request.headers.get(CSRF_HEADER_NAME)
+        if submitted_token is None:
+            form = await request.form()
+            submitted_token = form.get(CSRF_FORM_FIELD)
+
+        if not is_csrf_token_valid(request, submitted_token):
+            return JSONResponse(status_code=403, content={"detail": "Invalid or missing CSRF token."})
+
+    response = await call_next(request)
+    response.set_cookie(
+        CSRF_COOKIE_NAME,
+        get_or_create_csrf_token(request),
+        httponly=False,
+        secure=settings.secure_cookies,
+        samesite="lax",
+    )
+    return response
 
 
 @app.on_event("startup")

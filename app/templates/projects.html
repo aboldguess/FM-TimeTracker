@@ -26,6 +26,7 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
     <h2>Create new project</h2>
     <p class="helper">Available to admins, programme managers, and project managers.</p>
     <form class="form" method="post" action="/projects/form">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="name">Project name</label>
@@ -111,6 +112,7 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
               <div class="panel" style="margin-top: 0.75rem;">
                 <h3>Add task</h3>
                 <form class="form" method="post" action="/projects/{{ project.id }}/tasks/form">
+      {{ csrf_input(request) }}
                   <div class="form-grid">
                     <div>
                       <label for="task_name_{{ project.id }}">Task name</label>
@@ -137,6 +139,7 @@ Mini-README: Project delivery hub with portfolio metrics, recent activity, and c
                 {% endfor %}
                 {% for task in namespace.tasks %}
                   <form class="form" method="post" action="/projects/{{ project.id }}/tasks/{{ task.id }}/update" style="border-top: 1px solid var(--line); padding-top: 0.8rem; margin-top: 0.8rem;">
+      {{ csrf_input(request) }}
                     <div class="form-grid">
                       <div>
                         <label for="existing_task_name_{{ task.id }}">Task name</label>

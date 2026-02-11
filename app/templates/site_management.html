@@ -26,6 +26,7 @@ Mini-README: Admin-only site management console for subscriptions, configuration
     <h2>Subscription tiers</h2>
     <p class="helper">Create or update tiers before syncing Stripe pricing.</p>
     <form class="form" method="post" action="/subscription-tiers">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="name">Tier name</label>
@@ -74,6 +75,7 @@ Mini-README: Admin-only site management console for subscriptions, configuration
     <h2>Site configuration</h2>
     <p class="helper">Centralise platform settings for notifications, branding, and integrations.</p>
     <form class="form" method="post" action="/admin/site-config">
+      {{ csrf_input(request) }}
       <div class="form-grid">
         <div>
           <label for="key">Config key</label>
