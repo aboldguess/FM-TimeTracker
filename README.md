@@ -1,15 +1,116 @@
 # FM TimeTracker
 
-Enterprise-grade browser platform for programme/project management, resource planning, timesheets, leave workflows, and financial visibility.
+Enterprise browser app for programme/project delivery: planning, timesheets, leave, and admin controls.
+
+## Quick Start (recommended)
+
+### Linux / macOS / Raspberry Pi
+```bash
+git clone <your-repo-url>
+cd FM-TimeTracker
+./scripts/setup.sh
+./scripts/dev.sh
+```
+
+### Windows (PowerShell)
+```powershell
+git clone <your-repo-url>
+cd FM-TimeTracker
+.\scripts\setup.ps1
+.\scripts\dev.ps1
+```
+
+Open: `http://localhost:8000`
+
+> `scripts/setup.*` handles virtual environment creation, dependency installation,
+> `.env` creation, secure default generation, and `alembic upgrade head`.
+
+---
+
+## Manual Setup (if you prefer explicit steps)
+
+1. Create and activate a virtual environment.
+2. Install dependencies from `requirements.txt`.
+3. Copy `.env.example` to `.env` and set secure values (`SECRET_KEY`, bootstrap admin credentials).
+4. Run migrations: `alembic upgrade head`.
+5. Start app: `python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`.
+
+---
+
+## Required Environment Variables
+
+Defined in `.env.example`:
+
+- `SECRET_KEY`: strong random value (required)
+- `DATABASE_URL`: SQLite local default provided
+- `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD`: first-login admin
+- `SECURE_BOOTSTRAP_ONBOARDING`: `true` recommended
+- `SECURE_COOKIES`: set `true` in production
+
+Optional:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_PUBLISHABLE_KEY`
+
+---
+
+## Daily Development Commands
+
+```bash
+# Linux/macOS
+./scripts/dev.sh
+
+# Windows PowerShell
+.\scripts\dev.ps1
+
+# Test suite
+pytest
+```
+
+Health check: `GET /health`
+
+---
+
+## Deployment (Render)
+
+- **Build command:** `pip install -r requirements.txt`
+- **Start command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+- **Set env vars:** `SECRET_KEY`, `DATABASE_URL` (managed Postgres recommended), `SECURE_COOKIES=true`, bootstrap admin vars, optional Stripe keys.
+
+---
+
+## Architecture Summary
+
+- `app/main.py`: FastAPI app entrypoint and routes
+- `app/models.py`: SQLAlchemy models
+- `app/dependencies.py`: auth + RBAC guards
+- `app/security.py`: password hashing and signed sessions
+- `app/templates/*` + `app/static/styles.css`: UI templates/styles
+- `scripts/setup.sh` / `scripts/setup.ps1`: first-time setup automation
+- `scripts/dev.sh` / `scripts/dev.ps1`: local launchers
+
+---
+
+## Security Notes
+
+- Passwords are Argon2-hashed.
+- Session cookies are signed and HTTP-only.
+- RBAC checks are enforced server-side.
+- Rotate bootstrap admin credentials after first setup.
+
+---
 
 ## Major Feature Log
-1. **Alembic migration workflow + timesheet timestamp migration** (branch: current working branch) – Added versioned DB migrations, a baseline schema revision, and a dedicated migration for `timesheet_entries.created_at` + `updated_at`.
-2. **Role-aware operations hubs + sidebar navigation** (branch: current working branch) – Added context-aware sidebar and dedicated pages for timesheets, leave, projects, programmes, company, and site management.
-3. **Bootstrap platform implementation** (branch: current working branch) – Added secure RBAC backend, dashboards, project hierarchy, resource tracking, leave, sick leave, and subscription/admin controls.
-4. **Timesheet governance + customer management foundations** (branch: current working branch) – Added timesheet weekly submission/approval workflow, audit trails, line management, working-hours defaults, and customer CRUD to improve compliance and data quality.
-5. **Temporary password resets with enforced first-login change** (branch: current working branch) – Added admin/programme-manager temporary password reset controls and mandatory password update flow before protected pages are accessible.
+
+1. **Setup automation refresh + onboarding simplification** (branch: current working branch)
+2. **Alembic migration workflow + timesheet timestamp migration** (branch: current working branch)
+3. **Role-aware operations hubs + sidebar navigation** (branch: current working branch)
+4. **Bootstrap platform implementation** (branch: current working branch)
+5. **Timesheet governance + customer management foundations** (branch: current working branch)
+6. **Temporary password resets with enforced first-login change** (branch: current working branch)
 
 ## Feature Status Roadmap
+
 ### User-Facing
 - [x] Friendly landing splash page
 - [x] Secure login and role-based dashboards
@@ -37,195 +138,3 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - [ ] Full CI/CD pipeline (lint, test, security scans)
 - [x] Postgres/SQLite migration workflow via Alembic
 - [x] Fine-grained audit log trail
-
----
-
-## Architecture Summary
-- `app/main.py` – FastAPI app entry, routes, and startup bootstrap
-- `app/models.py` – SQLAlchemy ORM domain models
-- `app/dependencies.py` – auth + RBAC guards
-- `app/security.py` – password hashing and session token signing
-- `app/templates/*` + `app/static/styles.css` – modern browser UI pages
-- `scripts/dev.sh` – local launch helper
-- `tests/test_health.py` – health endpoint smoke test
-
-## Security Notes
-- Passwords are hashed with Argon2 (`passlib` + `argon2-cffi`).
-- Session cookies are HTTP-only and signed.
-- Role checks are enforced server-side for CRUD boundaries.
-- Set a strong `SECRET_KEY` and `SECURE_COOKIES=true` in production.
-- Bootstrap admin credentials are environment-driven (`BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`) so default credentials are never required in production.
-
-## Local Setup (Windows / Linux / macOS / Raspberry Pi)
-
-### 1) Clone and enter project
-```bash
-git clone <your-repo-url>
-cd FM-TimeTracker
-```
-
-### 2) Create virtual environment
-
-#### Linux/macOS/Raspberry Pi
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-#### Windows (PowerShell)
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-### 3) Install dependencies
-```bash
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-### 4) Configure environment variables
-Create a `.env` file in the repo root (same folder as `README.md`) by copying the example file.
-This keeps sensitive values out of source control and makes setup repeatable across OSes.
-
-#### Linux/macOS/Raspberry Pi
-```bash
-cp .env.example .env
-```
-
-#### Windows (PowerShell)
-```powershell
-Copy-Item .env.example .env
-```
-
-Then edit `.env` and add your values. **Always set a strong secret key.** You can generate one:
-
-#### Linux/macOS/Raspberry Pi
-```bash
-python3 - <<'PY'
-import secrets
-print(secrets.token_urlsafe(48))
-PY
-```
-
-#### Windows (PowerShell)
-```powershell
-python - <<'PY'
-import secrets
-print(secrets.token_urlsafe(48))
-PY
-```
-
-Example values:
-```env
-SECRET_KEY=replace-with-very-strong-secret
-DATABASE_URL=sqlite:///./fm_timetracker.db
-ENVIRONMENT=development
-DEBUG=true
-HOST=0.0.0.0
-PORT=8000
-SECURE_COOKIES=false
-BOOTSTRAP_ADMIN_EMAIL=admin@change.me
-BOOTSTRAP_ADMIN_PASSWORD=replace-with-a-long-random-password
-SECURE_BOOTSTRAP_ONBOARDING=true
-STRIPE_SECRET_KEY=
-STRIPE_PUBLISHABLE_KEY=
-```
-
-### 4.1) Bootstrap admin user/password workflow (new installs)
-
-Use this flow for first-time environment setup (local, staging, production):
-
-1. **Set bootstrap credentials before first app startup** in `.env`.
-   - `BOOTSTRAP_ADMIN_EMAIL`: initial admin login email.
-   - `BOOTSTRAP_ADMIN_PASSWORD`: long random temporary password (minimum 16+ chars recommended).
-   - `SECURE_BOOTSTRAP_ONBOARDING=true`: enables explicit setup guidance in secure/non-dev environments.
-2. **Start the app and log in with bootstrap credentials.**
-3. **Immediately rotate away from bootstrap credentials** by creating a permanent named admin user from the app's admin/user-management area.
-4. **Disable bootstrap defaults in deployed environments** by updating/removing `BOOTSTRAP_ADMIN_PASSWORD` from your runtime env once your real admin is in place.
-5. **For any temporary password reset**, the user is forced through the mandatory password change screen on next login before they can access protected pages.
-
-> Why this matters: this prevents long-lived known credentials and makes first-login hardening an explicit operational step.
-
-### 5) Run database migrations
-Run this for **new installs** and every **upgrade/pull** before starting the app.
-
-```bash
-alembic upgrade head
-```
-
-### 6) Run locally
-```bash
-python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-#### Windows (PowerShell) preferred entry point
-```powershell
-$env:PORT=8000
-.\scripts\dev.ps1
-```
-
-Open: `http://localhost:8000`
-
-### Bootstrap credentials quick reference
-- The app reads bootstrap credentials from environment variables, not hardcoded values at runtime.
-- Defaults (`admin@change.me` / `ChangeMeNow!123`) should be treated as **development-only fallbacks**.
-- In real environments, always set `BOOTSTRAP_ADMIN_PASSWORD` to a unique secret before first startup.
-- After first login, create your permanent admin account and rotate/remove bootstrap credentials.
-
-## API Usage Examples
-### Create a project
-```bash
-curl -X POST http://localhost:8000/projects \
-  -H "Content-Type: application/json" \
-  -H "Cookie: session_token=<token>" \
-  -d '{"name":"Project Atlas","description":"Delivery programme","planned_hours":1200}'
-```
-
-### Add timesheet entry
-```bash
-curl -X POST http://localhost:8000/timesheets \
-  -H "Content-Type: application/json" \
-  -H "Cookie: session_token=<token>" \
-  -d '{"entry_date":"2026-01-10","hours":7.5,"description":"Requirements workshop"}'
-```
-
-
-## Database Migrations (New + Existing Environments)
-
-- New environment setup: run `alembic upgrade head` once after installing dependencies and configuring `.env`.
-- Existing environment upgrades: run `alembic upgrade head` after pulling code updates.
-- App startup also runs migrations and auto-stamps legacy pre-Alembic schemas to the baseline revision before upgrading.
-- To inspect migration history: `alembic history`.
-- To inspect the current DB revision: `alembic current`.
-
-### Existing local SQLite databases
-If your existing local SQLite database was created before migrations were introduced:
-
-1. **Preferred path (preserve local data):** run `alembic upgrade head`.
-2. **Dev-only reset path (discard local data):** stop the app, delete `fm_timetracker.db`, then run `alembic upgrade head` to recreate schema from migrations.
-
-## Deploying on Render.com
-1. Create a new Web Service linked to your Git repo.
-2. Build command:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Start command:
-   ```bash
-   uvicorn app.main:app --host 0.0.0.0 --port $PORT
-   ```
-4. Set environment variables:
-   - `SECRET_KEY` (strong random string)
-   - `DATABASE_URL` (prefer managed Postgres)
-   - `SECURE_COOKIES=true`
-   - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` (if enabled)
-
-## Debugging Tips
-- Health check: `GET /health`
-- Watch startup logs for admin bootstrap messages.
-- Run tests: `pytest`
-- Enable verbose Uvicorn logs:
-  ```bash
-  uvicorn app.main:app --reload --log-level debug
-  ```
