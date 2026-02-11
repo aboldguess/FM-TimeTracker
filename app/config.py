@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     secure_cookies: bool = False
     bootstrap_admin_email: str = "admin@change.me"
     bootstrap_admin_password: str = "ChangeMeNow!123"
+    secure_bootstrap_onboarding: bool = False
     stripe_secret_key: str | None = None
     stripe_publishable_key: str | None = None
 

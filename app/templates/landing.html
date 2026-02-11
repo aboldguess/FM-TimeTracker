@@ -10,7 +10,10 @@
     <article class="card"><h3>People Ops built-in</h3><p>Timesheets, annual leave approvals, and sick leave recording are first-class features.</p></article>
   </div>
   {% if show_bootstrap %}
-  <p class="instruction">New installation? Sign in with <strong>{{ bootstrap_email }} / {{ bootstrap_password }}</strong>, then update your email, password, and profile details (including an optional profile image) immediately.</p>
+  <p class="instruction">New installation setup required. Bootstrap email: <strong>{{ bootstrap_email }}</strong>.</p>
+  <p class="instruction">{{ bootstrap_onboarding_hint }}</p>
+  {% elif bootstrap_setup_required %}
+  <p class="instruction">Initial admin setup is required for this environment. {{ bootstrap_onboarding_hint }}</p>
   {% else %}
   <p class="instruction">An administrator account already exists. Use your assigned admin credentials or contact support to regain access.</p>
   {% endif %}
