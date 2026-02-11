@@ -54,6 +54,7 @@ Enterprise-grade browser platform for programme/project management, resource pla
 - Session cookies are HTTP-only and signed.
 - Role checks are enforced server-side for CRUD boundaries.
 - Set a strong `SECRET_KEY` and `SECURE_COOKIES=true` in production.
+- Bootstrap admin credentials are environment-driven (`BOOTSTRAP_ADMIN_EMAIL`, `BOOTSTRAP_ADMIN_PASSWORD`) so default credentials are never required in production.
 
 ## Local Setup (Windows / Linux / macOS / Raspberry Pi)
 
@@ -124,9 +125,27 @@ DEBUG=true
 HOST=0.0.0.0
 PORT=8000
 SECURE_COOKIES=false
+BOOTSTRAP_ADMIN_EMAIL=admin@change.me
+BOOTSTRAP_ADMIN_PASSWORD=replace-with-a-long-random-password
+SECURE_BOOTSTRAP_ONBOARDING=true
 STRIPE_SECRET_KEY=
 STRIPE_PUBLISHABLE_KEY=
 ```
+
+### 4.1) Bootstrap admin user/password workflow (new installs)
+
+Use this flow for first-time environment setup (local, staging, production):
+
+1. **Set bootstrap credentials before first app startup** in `.env`.
+   - `BOOTSTRAP_ADMIN_EMAIL`: initial admin login email.
+   - `BOOTSTRAP_ADMIN_PASSWORD`: long random temporary password (minimum 16+ chars recommended).
+   - `SECURE_BOOTSTRAP_ONBOARDING=true`: enables explicit setup guidance in secure/non-dev environments.
+2. **Start the app and log in with bootstrap credentials.**
+3. **Immediately rotate away from bootstrap credentials** by creating a permanent named admin user from the app's admin/user-management area.
+4. **Disable bootstrap defaults in deployed environments** by updating/removing `BOOTSTRAP_ADMIN_PASSWORD` from your runtime env once your real admin is in place.
+5. **For any temporary password reset**, the user is forced through the mandatory password change screen on next login before they can access protected pages.
+
+> Why this matters: this prevents long-lived known credentials and makes first-login hardening an explicit operational step.
 
 ### 5) Run database migrations
 Run this for **new installs** and every **upgrade/pull** before starting the app.
@@ -148,11 +167,11 @@ $env:PORT=8000
 
 Open: `http://localhost:8000`
 
-### Bootstrap credentials
-- Email: `admin@change.me`
-- Password: `ChangeMeNow!123`
-
-Change password immediately by updating the user via API.
+### Bootstrap credentials quick reference
+- The app reads bootstrap credentials from environment variables, not hardcoded values at runtime.
+- Defaults (`admin@change.me` / `ChangeMeNow!123`) should be treated as **development-only fallbacks**.
+- In real environments, always set `BOOTSTRAP_ADMIN_PASSWORD` to a unique secret before first startup.
+- After first login, create your permanent admin account and rotate/remove bootstrap credentials.
 
 ## API Usage Examples
 ### Create a project
