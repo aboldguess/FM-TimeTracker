@@ -2,8 +2,16 @@
 Mini-README: Leave request system page for submitting, tracking, and approving annual leave.
 -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Leave request sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#submit-request" class="context-pill">Submit request</a>
+  <a href="#recent-requests" class="context-pill">Recent requests</a>
+  <a href="#pending-approvals" class="context-pill">Pending approvals</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>Leave Requests</h1>
   <p class="instruction">Track annual leave balances, submit requests, and manage approvals securely.</p>
 
@@ -22,7 +30,7 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
     </article>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="submit-request">
     <h2>Submit leave request</h2>
     <p class="helper">Requests are routed to your line manager for review and auditing.</p>
     <form class="form" method="post" action="/leave-requests/form">
@@ -45,7 +53,7 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
     </form>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="recent-requests">
     <h2>Your recent requests</h2>
     <table class="data-table">
       <thead>
@@ -74,7 +82,7 @@ Mini-README: Leave request system page for submitting, tracking, and approving a
   </div>
 
   {% if pending_approvals %}
-  <div class="panel">
+  <div class="panel" id="pending-approvals">
     <h2>Pending approvals</h2>
     <p class="helper">Line managers can approve or reject requests with an audit trail.</p>
     <table class="data-table">

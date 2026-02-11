@@ -2,8 +2,15 @@
 Mini-README: Customer management hub for creating and reviewing client records.
 -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Customer sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#add-customer" class="context-pill">Add customer</a>
+  <a href="#recent-customers" class="context-pill">Recent customers</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>Customers</h1>
   <p class="instruction">All projects must map to a customer record for clean reporting and billing.</p>
 
@@ -18,7 +25,7 @@ Mini-README: Customer management hub for creating and reviewing client records.
     </article>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="add-customer">
     <h2>Add customer</h2>
     <p class="helper">Capture clean customer records to power project, programme, and billing dropdowns.</p>
     <form class="form" method="post" action="/customers/form">
@@ -37,7 +44,7 @@ Mini-README: Customer management hub for creating and reviewing client records.
     </form>
   </div>
 
-  <div class="panel">
+  <div class="panel" id="recent-customers">
     <h2>Recent customers</h2>
     <table class="data-table">
       <thead>

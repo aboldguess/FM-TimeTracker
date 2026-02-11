@@ -1,7 +1,13 @@
 <!-- Mini-README: Role-sensitive dashboard surfacing key operational metrics. -->
 {% extends 'base.html' %}
+{% block contextual_nav %}
+<nav class="context-toolbar" aria-label="Dashboard sections">
+  <a href="#overview" class="context-pill">Overview</a>
+  <a href="#quick-actions" class="context-pill">Quick actions</a>
+</nav>
+{% endblock %}
 {% block content %}
-<section>
+<section id="overview">
   <h1>{{ user.role.replace('_', ' ').title() }} Dashboard</h1>
   <p class="instruction">Use API endpoints to CRUD records. This dashboard summarizes your current operational picture.</p>
   <div class="card-grid">
@@ -9,7 +15,7 @@
     <article class="card"><h3>Approved logged hours</h3><p>{{ '%.2f'|format(timesheet_hours or 0) }}</p></article>
     <article class="card"><h3>Pending leave approvals</h3><p>{{ pending_leave }}</p></article>
   </div>
-  <div class="panel">
+  <div class="panel" id="quick-actions">
     <h2>Quick start actions</h2>
     <ul>
       <li>Admins: configure user cost/bill rates, leave entitlement, site config, and subscription tiers.</li>
