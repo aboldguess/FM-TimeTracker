@@ -45,7 +45,7 @@ if (-not (Test-Path ".env")) {
 }
 
 Write-Host "[setup] Ensuring secure .env defaults"
-python - <<'PY'
+$envBootstrapScript = @'
 from pathlib import Path
 import secrets
 
@@ -95,7 +95,9 @@ for key in order:
 
 env_path.write_text('\n'.join(output) + '\n', encoding='utf-8')
 print('[setup] .env updated with required keys and secure defaults.')
-PY
+'@
+
+$envBootstrapScript | python -
 
 Write-Host "[setup] Running database migrations"
 alembic upgrade head
