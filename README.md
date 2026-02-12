@@ -72,11 +72,40 @@ pytest
 
 # If first startup already happened and you need to rotate the bootstrap admin password
 python scripts/reset_bootstrap_admin_password.py --password "<new-strong-password>"
+
+# Nuclear option: fully reset local app state and rebuild from scratch (destructive)
+./scripts/nuclear_reset.sh --yes-i-understand
+
+# Windows PowerShell equivalent
+.\scripts\nuclear_reset.ps1 -ConfirmReset
 ```
 
 Health check: `GET /health`
 
 ---
+
+
+## Nuclear Reset (Destructive Recovery)
+
+Use this only when your local environment is badly broken and normal setup/troubleshooting has failed.
+
+What it deletes locally:
+- `.venv`
+- `.env`
+- local SQLite files (`*.db`, `*.sqlite`, `*.sqlite3`)
+- Python caches (`__pycache__`, `*.pyc`)
+
+After deletion, it automatically re-runs setup to rebuild a clean baseline.
+
+### Linux / macOS / Raspberry Pi
+```bash
+./scripts/nuclear_reset.sh --yes-i-understand
+```
+
+### Windows (PowerShell)
+```powershell
+.\scripts\nuclear_reset.ps1 -ConfirmReset
+```
 
 ## Deployment (Render)
 
@@ -95,6 +124,7 @@ Health check: `GET /health`
 - `app/templates/*` + `app/static/styles.css`: UI templates/styles
 - `scripts/setup.sh` / `scripts/setup.ps1`: first-time setup automation
 - `scripts/dev.sh` / `scripts/dev.ps1`: local launchers
+- `scripts/nuclear_reset.sh` / `scripts/nuclear_reset.ps1`: destructive local rebuild helpers
 
 ---
 
@@ -112,12 +142,13 @@ Health check: `GET /health`
 
 ## Major Feature Log
 
-1. **Setup automation refresh + onboarding simplification** (branch: current working branch)
-2. **Alembic migration workflow + timesheet timestamp migration** (branch: current working branch)
-3. **Role-aware operations hubs + sidebar navigation** (branch: current working branch)
-4. **Bootstrap platform implementation** (branch: current working branch)
-5. **Timesheet governance + customer management foundations** (branch: current working branch)
-6. **Temporary password resets with enforced first-login change** (branch: current working branch)
+1. **Nuclear reset recovery scripts for full local rebuilds** (branch: current working branch)
+2. **Setup automation refresh + onboarding simplification** (branch: current working branch)
+3. **Alembic migration workflow + timesheet timestamp migration** (branch: current working branch)
+4. **Role-aware operations hubs + sidebar navigation** (branch: current working branch)
+5. **Bootstrap platform implementation** (branch: current working branch)
+6. **Timesheet governance + customer management foundations** (branch: current working branch)
+7. **Temporary password resets with enforced first-login change** (branch: current working branch)
 
 ## Feature Status Roadmap
 
@@ -148,3 +179,4 @@ Health check: `GET /health`
 - [ ] Full CI/CD pipeline (lint, test, security scans)
 - [x] Postgres/SQLite migration workflow via Alembic
 - [x] Fine-grained audit log trail
+- [x] Nuclear local reset scripts for destructive recovery
