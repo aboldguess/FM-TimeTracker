@@ -31,6 +31,23 @@ def test_login_json_payload_missing_fields_returns_validation_page_not_422() -> 
     assert "Field required" not in response.text
 
 
+def test_login_form_trims_whitespace_before_email_validation() -> None:
+    """Whitespace around email should not trigger malformed-email validation errors."""
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={
+            "email": "  admin@change.me  ",
+            "password": "wrong-password",
+        },
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 401
+    assert "Enter a valid email address" not in response.text
+    assert "Invalid credentials" in response.text
+
+
 def test_landing_page_uses_full_width_splash_layout_for_guests() -> None:
     """Guest users should get the full-width splash layout instead of sidebar-constrained content."""
     response = client.get("/")
