@@ -397,6 +397,14 @@ async def login(request: Request, db: Session = Depends(get_db)):
         email = form_data.get("email")
         password = form_data.get("password")
 
+    # Defensive normalization: browsers and password managers occasionally
+    # include accidental whitespace around values. Strip it before validation
+    # so valid credentials are not rejected as malformed input.
+    if isinstance(email, str):
+        email = email.strip()
+    if isinstance(password, str):
+        password = password.strip()
+
     try:
         payload = LoginRequest(email=email, password=password)
     except ValidationError:
