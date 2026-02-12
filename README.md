@@ -52,6 +52,10 @@ Optional:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_PUBLISHABLE_KEY`
 
+> Bootstrap credentials are one-time seed values. After first startup creates
+> an admin account, changing `BOOTSTRAP_ADMIN_PASSWORD` in `.env` does **not**
+> rotate that existing account password.
+
 ---
 
 ## Daily Development Commands
@@ -65,6 +69,9 @@ Optional:
 
 # Test suite
 pytest
+
+# If first startup already happened and you need to rotate the bootstrap admin password
+python scripts/reset_bootstrap_admin_password.py --password "<new-strong-password>"
 ```
 
 Health check: `GET /health`
@@ -97,6 +104,9 @@ Health check: `GET /health`
 - Session cookies are signed and HTTP-only.
 - RBAC checks are enforced server-side.
 - Rotate bootstrap admin credentials after first setup.
+- If bootstrap credentials are lost after first setup, use
+  `scripts/reset_bootstrap_admin_password.py` to securely reset and force a
+  change on next login.
 
 ---
 

@@ -4,6 +4,7 @@ This file wires API routes, HTML pages, RBAC enforcement, and startup actions
 for the FM TimeTracker browser application.
 """
 
+import logging
 from datetime import date, datetime, timedelta
 
 import stripe
@@ -54,6 +55,7 @@ from app.services_timesheets import apply_task_logged_hours_edit
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 
 def csrf_hidden_input(request: Request) -> Markup:
@@ -249,10 +251,20 @@ def bootstrap_context(db: Session) -> dict[str, object]:
     setup_required = admin_count == 0 or non_bootstrap_admins == 0
     is_non_production = settings.environment.lower() != "production"
     show_bootstrap_hint = setup_required and (is_non_production or settings.secure_bootstrap_onboarding)
-    onboarding_hint = (
-        "Before first startup, set BOOTSTRAP_ADMIN_PASSWORD in your environment "
-        "and rotate bootstrap credentials immediately after first login."
-    )
+
+    if admin_count == 0:
+        onboarding_hint = (
+            "Before first startup, set BOOTSTRAP_ADMIN_PASSWORD in your environment "
+            "and rotate bootstrap credentials immediately after first login."
+        )
+    elif non_bootstrap_admins == 0:
+        onboarding_hint = (
+            "Bootstrap account exists; sign in with that account, rotate bootstrap credentials, "
+            "and create at least one non-bootstrap admin account."
+        )
+    else:
+        onboarding_hint = ""
+
     return {
         "show_bootstrap": show_bootstrap_hint,
         "bootstrap_setup_required": setup_required,
@@ -349,6 +361,11 @@ def startup() -> None:
                 )
             )
             db.commit()
+        else:
+            logger.info(
+                "Bootstrap admin already exists; BOOTSTRAP_ADMIN_EMAIL and "
+                "BOOTSTRAP_ADMIN_PASSWORD are one-time seed values and are ignored after initial bootstrap."
+            )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -390,8 +407,20 @@ async def login(request: Request, db: Session = Depends(get_db)):
     content_type = request.headers.get("content-type", "").lower()
     if "application/json" in content_type:
         payload_data = await request.json()
-        email = payload_data.get("email") if isinstance(payload_data, dict) else None
-        password = payload_data.get("password") if isinstance(payload_data, dict) else None
+        if isinstance(payload_data, dict):
+            email = payload_data.get("email")
+            password = payload_data.get("password")
+        else:
+            return templates.TemplateResponse(
+                "login.html",
+                {
+                    "request": request,
+                    "error": "Invalid login request format.",
+                    **bootstrap_context(db),
+                    **splash_content_context(db),
+                },
+                status_code=400,
+            )
     else:
         form_data = await request.form()
         email = form_data.get("email")
@@ -405,14 +434,28 @@ async def login(request: Request, db: Session = Depends(get_db)):
     if isinstance(password, str):
         password = password.strip()
 
+    validation_error_message = "Invalid login request format."
     try:
         payload = LoginRequest(email=email, password=password)
-    except ValidationError:
+    except ValidationError as exc:
+        for error in exc.errors():
+            field = error.get("loc", [None])[-1]
+            error_type = error.get("type", "")
+            if field == "email":
+                validation_error_message = f"Enter a valid email address (example: {settings.bootstrap_admin_email})."
+                break
+            if field == "password":
+                validation_error_message = "Enter your password to continue."
+                break
+            if error_type == "model_type":
+                validation_error_message = "Invalid login request format."
+                break
+
         return templates.TemplateResponse(
             "login.html",
             {
                 "request": request,
-                "error": f"Enter a valid email address (example: {settings.bootstrap_admin_email}).",
+                "error": validation_error_message,
                 **bootstrap_context(db),
                 **splash_content_context(db),
             },
