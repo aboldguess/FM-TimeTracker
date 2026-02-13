@@ -32,8 +32,9 @@ echo "[nuclear-reset] Starting destructive local reset..."
 rm -rf .venv
 rm -f .env
 
-# Delete local SQLite databases that are commonly used for development.
-find . -maxdepth 3 -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print -delete || true
+# Delete local SQLite databases across the full repo tree.
+# No depth cap: nested DATABASE_URL targets must also be removed.
+find . -type f \( -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' \) -print -delete || true
 
 # Delete Python cache artifacts for a clean import/runtime state.
 find . -type d -name '__pycache__' -prune -print -exec rm -rf {} + || true
