@@ -56,6 +56,7 @@ app = FastAPI(title=settings.app_name, debug=settings.debug)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
 logger = logging.getLogger(__name__)
+auth_login_logger = logging.getLogger("auth.login")
 
 
 def csrf_hidden_input(request: Request) -> Markup:
@@ -404,10 +405,16 @@ async def login(request: Request, db: Session = Depends(get_db)):
     """Authenticate users from either HTML form posts or JSON API payloads."""
     email: str | None = None
     password: str | None = None
+    request_source = "form"
+    email_key_present = False
+    password_key_present = False
     content_type = request.headers.get("content-type", "").lower()
     if "application/json" in content_type:
+        request_source = "json"
         payload_data = await request.json()
         if isinstance(payload_data, dict):
+            email_key_present = "email" in payload_data
+            password_key_present = "password" in payload_data
             email = payload_data.get("email")
             password = payload_data.get("password")
         else:
@@ -423,6 +430,8 @@ async def login(request: Request, db: Session = Depends(get_db)):
             )
     else:
         form_data = await request.form()
+        email_key_present = "email" in form_data
+        password_key_present = "password" in form_data
         email = form_data.get("email")
         password = form_data.get("password")
 
@@ -438,9 +447,25 @@ async def login(request: Request, db: Session = Depends(get_db)):
     try:
         payload = LoginRequest(email=email, password=password)
     except ValidationError as exc:
+        email_len = len(email) if isinstance(email, str) else None
+        auth_login_logger.warning(
+            "login_validation_failed source=%s content_type=%r email_key_present=%s password_key_present=%s email_repr=%r email_len=%s",
+            request_source,
+            content_type,
+            email_key_present,
+            password_key_present,
+            email,
+            email_len,
+        )
         for error in exc.errors():
             field = error.get("loc", [None])[-1]
             error_type = error.get("type", "")
+            auth_login_logger.info(
+                "login_validation_error_item loc=%s type=%s msg=%s",
+                error.get("loc"),
+                error_type,
+                error.get("msg", ""),
+            )
             if field == "email":
                 validation_error_message = f"Enter a valid email address (example: {settings.bootstrap_admin_email})."
                 break
