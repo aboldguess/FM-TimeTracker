@@ -140,6 +140,119 @@ After deletion, it automatically re-runs setup to rebuild a clean baseline.
 
 ---
 
+## First boot login troubleshooting
+
+If first login fails, work through these checks in order.
+
+### 1) Verify `.env` location and the effective runtime values loaded
+
+The app loads env values from the repo-root `.env` file (absolute path)
+defined in `app/config.py`.
+
+#### Linux / macOS / Raspberry Pi (bash/zsh)
+```bash
+pwd
+test -f .env && echo ".env found at: $(pwd)/.env" || echo "Missing .env in repo root"
+python -c "from app.config import ENV_FILE_PATH, settings; print('ENV_FILE_PATH=', ENV_FILE_PATH); print('effective bootstrap email=', settings.bootstrap_admin_email); print('effective secure_bootstrap_onboarding=', settings.secure_bootstrap_onboarding)"
+```
+
+#### Windows PowerShell
+```powershell
+Get-Location
+if (Test-Path .env) { Write-Host ".env found at: $((Resolve-Path .env).Path)" } else { Write-Host "Missing .env in repo root" }
+python -c "from app.config import ENV_FILE_PATH, settings; print('ENV_FILE_PATH=', ENV_FILE_PATH); print('effective bootstrap email=', settings.bootstrap_admin_email); print('effective secure_bootstrap_onboarding=', settings.secure_bootstrap_onboarding)"
+```
+
+#### Windows Command Prompt (cmd.exe)
+```bat
+cd
+if exist .env (echo .env found at: %cd%\.env) else (echo Missing .env in repo root)
+python -c "from app.config import ENV_FILE_PATH, settings; print('ENV_FILE_PATH=', ENV_FILE_PATH); print('effective bootstrap email=', settings.bootstrap_admin_email); print('effective secure_bootstrap_onboarding=', settings.secure_bootstrap_onboarding)"
+```
+
+### 2) Remember bootstrap credentials are one-time seed values
+
+- `BOOTSTRAP_ADMIN_EMAIL` and `BOOTSTRAP_ADMIN_PASSWORD` are only consumed when
+  startup finds **no admin user** in the database.
+- Once an admin exists, changing those env values does **not** overwrite that
+  existing admin password.
+
+### 3) Check whether your DB already contains an admin
+
+If this returns `admin_count > 0`, the bootstrap seed has already been consumed.
+
+#### Linux / macOS / Raspberry Pi (bash/zsh)
+```bash
+python -c "from sqlalchemy import select, func; from app.database import SessionLocal; from app.models import User, Role; db=SessionLocal(); print({'admin_count': db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN)) or 0}); db.close()"
+```
+
+#### Windows PowerShell
+```powershell
+python -c "from sqlalchemy import select, func; from app.database import SessionLocal; from app.models import User, Role; db=SessionLocal(); print({'admin_count': db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN)) or 0}); db.close()"
+```
+
+#### Windows Command Prompt (cmd.exe)
+```bat
+python -c "from sqlalchemy import select, func; from app.database import SessionLocal; from app.models import User, Role; db=SessionLocal(); print({'admin_count': db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN)) or 0}); db.close()"
+```
+
+### 4) Reset bootstrap admin password when seed values are already consumed
+
+Use this when an admin already exists and you cannot sign in with expected credentials.
+
+#### Linux / macOS / Raspberry Pi (bash/zsh)
+```bash
+python scripts/reset_bootstrap_admin_password.py --password "<new-strong-password>"
+```
+
+#### Windows PowerShell
+```powershell
+python .\scripts\reset_bootstrap_admin_password.py --password "<new-strong-password>"
+```
+
+#### Windows Command Prompt (cmd.exe)
+```bat
+python scripts\reset_bootstrap_admin_password.py --password "<new-strong-password>"
+```
+
+### 5) Check the new auth/bootstrap diagnostics in logs
+
+Look for these lines in app logs while reproducing the login issue:
+
+- `Bootstrap startup status: any_admin_exists=... bootstrap_admin_email_exists=... bootstrap_seed_values=used|ignored`
+- `login_validation_failed source=... content_type=... email_key_present=... password_key_present=...`
+- `login_validation_error_item loc=... type=... msg=...`
+
+Example log filtering:
+
+#### Linux / macOS / Raspberry Pi (bash/zsh)
+```bash
+# if logs are in a file
+rg -n "Bootstrap startup status|login_validation_failed|login_validation_error_item" <path-to-log-file>
+
+# or from live uvicorn output
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 2>&1 | tee /tmp/fm.log
+rg -n "Bootstrap startup status|login_validation_failed|login_validation_error_item" /tmp/fm.log
+```
+
+#### Windows PowerShell
+```powershell
+# if logs are in a file
+Select-String -Path .\fm.log -Pattern "Bootstrap startup status|login_validation_failed|login_validation_error_item"
+
+# or from live uvicorn output
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload *>&1 | Tee-Object -FilePath .\fm.log
+Select-String -Path .\fm.log -Pattern "Bootstrap startup status|login_validation_failed|login_validation_error_item"
+```
+
+#### Windows Command Prompt (cmd.exe)
+```bat
+REM if logs are in a file
+findstr /n /c:"Bootstrap startup status" /c:"login_validation_failed" /c:"login_validation_error_item" fm.log
+```
+
+---
+
 ## Major Feature Log
 
 1. **Nuclear reset recovery scripts for full local rebuilds** (branch: current working branch)
