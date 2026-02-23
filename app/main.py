@@ -50,6 +50,7 @@ from app.models import (
 )
 from app.schemas import LeaveCreate, LoginRequest, ProjectCreate, SickLeaveCreate, TimesheetCreate, UserCreate, UserUpdate
 from app.security import create_session_token, ensure_password_backend, hash_password, read_session_token, verify_password
+from app.security_input import normalize_login_email_input
 from app.services_timesheets import apply_task_logged_hours_edit
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
@@ -435,11 +436,12 @@ async def login(request: Request, db: Session = Depends(get_db)):
         email = form_data.get("email")
         password = form_data.get("password")
 
-    # Defensive normalization: browsers and password managers occasionally
-    # include accidental whitespace around values. Strip it before validation
-    # so valid credentials are not rejected as malformed input.
+    # Defensive normalization: login email input is normalized with explicit,
+    # reviewable security-focused rules before schema validation.
+    # This trims accidental spaces, normalizes Unicode compatibility variants,
+    # and removes invisible control/zero-width characters.
     if isinstance(email, str):
-        email = email.strip()
+        email = normalize_login_email_input(email)
     if isinstance(password, str):
         password = password.strip()
 

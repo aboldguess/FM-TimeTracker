@@ -93,6 +93,40 @@ def test_login_form_trims_whitespace_before_email_validation() -> None:
     assert "Invalid credentials" in response.text
 
 
+def test_login_form_normalizes_unicode_compatibility_email_before_validation() -> None:
+    """Full-width compatibility variants should normalize to a valid email string."""
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={
+            "email": "ａｄｍｉｎ＠ｃｈａｎｇｅ.ｍｅ",
+            "password": "wrong-password",
+        },
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 401
+    assert "Enter a valid email address" not in response.text
+    assert "Invalid credentials" in response.text
+
+
+def test_login_form_removes_zero_width_chars_before_email_validation() -> None:
+    """Zero-width Unicode characters in email input should be stripped pre-validation."""
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={
+            "email": "ad\u200bmin@cha\u200cnge.me",
+            "password": "wrong-password",
+        },
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 401
+    assert "Enter a valid email address" not in response.text
+    assert "Invalid credentials" in response.text
+
+
 def test_landing_page_uses_full_width_splash_layout_for_guests() -> None:
     """Guest users should get the full-width splash layout instead of sidebar-constrained content."""
     response = client.get("/")
