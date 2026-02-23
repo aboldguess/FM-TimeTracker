@@ -1,5 +1,7 @@
 """Mini-README: Regression tests for login parsing and guest splash layout behavior."""
 
+import logging
+
 from fastapi.testclient import TestClient
 
 from app.database import Base, engine
@@ -125,6 +127,75 @@ def test_login_form_removes_zero_width_chars_before_email_validation() -> None:
     assert response.status_code == 401
     assert "Enter a valid email address" not in response.text
     assert "Invalid credentials" in response.text
+
+
+def test_login_rejects_zero_width_space_contaminated_visual_lookalike_email(caplog) -> None:
+    """Visually similar emails altered with zero-width characters should be rejected with safe feedback."""
+    caplog.set_level(logging.INFO, logger="auth.login")
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={
+            "email": "admin@change\u200bme",
+            "password": "wrong-password",
+        },
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 400
+    assert "Enter a valid email address" in response.text
+    assert "admin@change\u200bme" not in response.text
+    assert "Traceback" not in response.text
+    assert "login_validation_failed" in caplog.text
+    assert "email_key_present=True" in caplog.text
+    assert "password_key_present=True" in caplog.text
+    assert "login_validation_error_item loc=('email',)" in caplog.text
+
+
+def test_login_missing_email_key_logs_actionable_diagnostics(caplog) -> None:
+    """Requests with a wrong email key should return safe UI feedback and precise diagnostics."""
+    caplog.set_level(logging.INFO, logger="auth.login")
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={
+            "username": "admin@change.me",
+            "password": "wrong-password",
+        },
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 400
+    assert "Enter a valid email address" in response.text
+    assert "Field required" not in response.text
+    assert "login_validation_failed" in caplog.text
+    assert "source=json" in caplog.text
+    assert "email_key_present=False" in caplog.text
+    assert "password_key_present=True" in caplog.text
+    assert "login_validation_error_item loc=('email',)" in caplog.text
+
+
+def test_login_rejects_email_with_control_characters_and_logs_context(caplog) -> None:
+    """Control-character contaminated email should fail safely and be logged for debugging."""
+    caplog.set_level(logging.INFO, logger="auth.login")
+    token = _csrf_token()
+    response = client.post(
+        "/login",
+        json={
+            "email": "admin@change\u0000me",
+            "password": "wrong-password",
+        },
+        headers={"x-csrf-token": token},
+    )
+
+    assert response.status_code == 400
+    assert "Enter a valid email address" in response.text
+    assert "Invalid login request format." not in response.text
+    assert "login_validation_failed" in caplog.text
+    assert "email_key_present=True" in caplog.text
+    assert "password_key_present=True" in caplog.text
+    assert "email_repr='admin@changeme'" in caplog.text
+    assert "login_validation_error_item loc=('email',)" in caplog.text
 
 
 def test_landing_page_uses_full_width_splash_layout_for_guests() -> None:
