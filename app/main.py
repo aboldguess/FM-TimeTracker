@@ -267,12 +267,59 @@ def bootstrap_context(db: Session) -> dict[str, object]:
     else:
         onboarding_hint = ""
 
+    bootstrap_seed_consumed = admin_count > 0
+    bootstrap_seed_operator_message = (
+        "Bootstrap seed credentials have already been consumed; environment bootstrap values are now ignored. "
+        "For credential rotation or recovery, run scripts/reset_bootstrap_admin_password.py."
+        if bootstrap_seed_consumed and not show_bootstrap_hint
+        else ""
+    )
+
     return {
         "show_bootstrap": show_bootstrap_hint,
         "bootstrap_setup_required": setup_required,
         "bootstrap_email": settings.bootstrap_admin_email if show_bootstrap_hint else None,
         "bootstrap_onboarding_hint": onboarding_hint,
+        "bootstrap_seed_consumed": bootstrap_seed_consumed,
+        "bootstrap_seed_operator_message": bootstrap_seed_operator_message,
     }
+
+
+def ensure_bootstrap_admin(db: Session) -> None:
+    """Create bootstrap admin exactly once and log one-time seed consumption status."""
+    admin_exists = bool(db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN)) or 0)
+    bootstrap_email_exists = bool(
+        db.scalar(
+            select(func.count(User.id)).where(
+                User.role == Role.ADMIN,
+                func.lower(User.email) == settings.bootstrap_admin_email.lower(),
+            )
+        )
+        or 0
+    )
+
+    bootstrap_seed_status = "ignored"
+    if not admin_exists:
+        db.add(
+            User(
+                email=settings.bootstrap_admin_email,
+                full_name="System Admin",
+                hashed_password=hash_password(settings.bootstrap_admin_password),
+                role=Role.ADMIN,
+                cost_rate=120,
+                bill_rate=250,
+            )
+        )
+        db.commit()
+        bootstrap_seed_status = "used"
+        bootstrap_email_exists = True
+
+    logger.info(
+        "Bootstrap startup status: any_admin_exists=%s bootstrap_admin_email_exists=%s bootstrap_seed_values=%s",
+        admin_exists,
+        bootstrap_email_exists,
+        bootstrap_seed_status,
+    )
 
 
 def splash_content_context(db: Session) -> dict[str, str]:
@@ -350,24 +397,7 @@ def startup() -> None:
     stripe.api_key = settings.stripe_secret_key
     ensure_password_backend()
     with Session(engine) as db:
-        admin_exists = db.scalar(select(func.count(User.id)).where(User.role == Role.ADMIN))
-        if not admin_exists:
-            db.add(
-                User(
-                    email=settings.bootstrap_admin_email,
-                    full_name="System Admin",
-                    hashed_password=hash_password(settings.bootstrap_admin_password),
-                    role=Role.ADMIN,
-                    cost_rate=120,
-                    bill_rate=250,
-                )
-            )
-            db.commit()
-        else:
-            logger.info(
-                "Bootstrap admin already exists; BOOTSTRAP_ADMIN_EMAIL and "
-                "BOOTSTRAP_ADMIN_PASSWORD are one-time seed values and are ignored after initial bootstrap."
-            )
+        ensure_bootstrap_admin(db)
 
 
 @app.get("/", response_class=HTMLResponse)

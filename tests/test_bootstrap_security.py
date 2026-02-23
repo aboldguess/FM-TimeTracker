@@ -84,6 +84,8 @@ def test_bootstrap_context_for_non_bootstrap_admin_suppresses_setup_message(monk
     assert context["bootstrap_setup_required"] is False
     assert context["show_bootstrap"] is False
     assert context["bootstrap_onboarding_hint"] == ""
+    assert context["bootstrap_seed_consumed"] is True
+    assert "reset_bootstrap_admin_password.py" in context["bootstrap_seed_operator_message"]
 
 
 def test_startup_creates_hashed_bootstrap_admin(monkeypatch, tmp_path) -> None:
@@ -140,7 +142,27 @@ def test_startup_does_not_overwrite_existing_admin_password(monkeypatch, tmp_pat
     assert existing_admin is not None
     assert existing_admin.hashed_password == "existing-hash-placeholder"
     assert bootstrap_admin is None
-    assert "ignored after initial bootstrap" in caplog.text
+    assert "Bootstrap startup status" in caplog.text
+    assert "bootstrap_seed_values=ignored" in caplog.text
+    assert "any_admin_exists=True" in caplog.text
+
+
+def test_startup_logs_seed_usage_when_bootstrap_admin_is_created(monkeypatch, tmp_path, caplog) -> None:
+    """Startup logs should explicitly record one-time seed usage during first bootstrap."""
+    test_engine = create_engine(f"sqlite:///{tmp_path / 'startup_seed_usage.db'}", future=True)
+    Base.metadata.create_all(test_engine)
+
+    monkeypatch.setattr("app.main.engine", test_engine)
+    monkeypatch.setattr("app.main.run_migrations", lambda: None)
+    monkeypatch.setattr(settings, "bootstrap_admin_email", "bootstrap@example.com")
+    monkeypatch.setattr(settings, "bootstrap_admin_password", "HighlySensitivePass!456")
+
+    caplog.set_level("INFO")
+    startup()
+
+    assert "Bootstrap startup status" in caplog.text
+    assert "bootstrap_seed_values=used" in caplog.text
+    assert "bootstrap_admin_email_exists=True" in caplog.text
 
 
 def test_reset_bootstrap_admin_password_updates_hash_and_forces_rotation(tmp_path) -> None:
