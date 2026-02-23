@@ -11,6 +11,9 @@
     {% elif bootstrap_setup_required %}
     <p class="instruction">Setup is required in this environment. {{ bootstrap_onboarding_hint }}</p>
     {% endif %}
+    {% if bootstrap_seed_operator_message %}
+    <p class="instruction">{{ bootstrap_seed_operator_message }}</p>
+    {% endif %}
     {% if error %}<p class="error">{{ error }}</p>{% endif %}
     <form method="post" action="/login" class="form">
       {{ csrf_input(request) }}
